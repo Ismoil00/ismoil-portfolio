@@ -1,0 +1,297 @@
+{
+  "meta": {
+    "title": "Ismoil Sharifov — Full-stack software engineer",
+    "description": "Full-stack software engineer from Dushanbe with 4 years of experience building production-grade software for web, desktop, and mobile with Python, FastAPI, Node.js, React, and Next.js."
+  },
+  "nav": {
+    "about": "About",
+    "skills": "Skills",
+    "experience": "Experience",
+    "projects": "Projects",
+    "testimonials": "Testimonials",
+    "certificates": "Certificates",
+    "contact": "Contact",
+    "resume": "Resume",
+    "menu": "Open menu",
+    "close": "Close menu",
+    "language": "Language",
+    "themeLight": "Switch to light theme",
+    "themeDark": "Switch to dark theme"
+  },
+  "hero": {
+    "greeting": "Hello! I'm",
+    "scroll": "Scroll",
+    "jumpLabel": "Jump to",
+    "work": "My work",
+    "workHint": "{count, plural, one {# project} other {# projects}}",
+    "experience": "My experience",
+    "experienceHint": "{count, plural, one {# role} other {# roles}} · {duration}",
+    "statCertificates": "{count, plural, one {certificate or diploma} other {certificates & diplomas}}",
+    "statTechs": "{count, plural, one {technology I've worked with} other {technologies I've worked with}}",
+    "statYears": "{count, plural, one {year of commercial experience} other {years of commercial experience}}",
+    "statProjects": "{count, plural, one {project shipped to production} other {projects shipped to production}}"
+  },
+  "availability": {
+    "seeking": "Actively seeking new career opportunities",
+    "open": "Open to new career opportunities",
+    "unavailable": "Not currently seeking new opportunities"
+  },
+  "sections": {
+    "about": {
+      "eyebrow": "About me",
+      "title": "Engineer who owns the whole feature"
+    },
+    "skills": {
+      "eyebrow": "Tech stack",
+      "title": "Tools I build with"
+    },
+    "experience": {
+      "eyebrow": "Career",
+      "title": "Where I've worked"
+    },
+    "projects": {
+      "eyebrow": "Work & projects",
+      "title": "Projects I've delivered"
+    },
+    "certificates": {
+      "eyebrow": "Certification & education",
+      "title": "Credentials I've earned"
+    },
+    "contact": {
+      "eyebrow": "Contact",
+      "title": "Let's build something together"
+    },
+    "testimonials": {
+      "eyebrow": "Testimonials",
+      "title": "What colleagues and clients say"
+    }
+  },
+  "experience": {
+    "present": "Present",
+    "months": [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ],
+    "years": "{count, plural, one {# yr} other {# yrs}}",
+    "monthsCount": "{count, plural, one {# mo} other {# mos}}",
+    "stack": "Tech stack",
+    "projects": "Key projects",
+    "testimonials": "Testimonials",
+    "openProject": "Go to project: {name}",
+    "openTestimonial": "Read testimonial from {name}",
+    "companySite": "{company} website",
+    "viewAll": "View all experience",
+    "viewAllCount": "{count} positions"
+  },
+  "projects": {
+    "confidential": "Client project under NDA — code and demo can't be shared publicly.",
+    "code": "Source code",
+    "codeHint": "View the source code on GitHub",
+    "codeClosed": "This project isn't open-source",
+    "live": "Live preview",
+    "liveHint": "Open the live preview in a new tab",
+    "liveClosed": "No live preview available",
+    "open": "Open project: {name}",
+    "viewAll": "View all projects",
+    "viewAllCount": "{count, plural, one {# project} other {# projects}}",
+    "inDevelopment": "In development"
+  },
+  "contact": {
+    "question": "Have a role, a project, or just a question?",
+    "formLead": "Send a message and I'll reply within a day.",
+    "name": "Your name",
+    "namePlaceholder": "Jane Doe",
+    "contactField": "Your email or WhatsApp",
+    "contactPlaceholder": "jane@company.com",
+    "message": "Your message",
+    "messagePlaceholder": "Tell me about the role or project",
+    "send": "Send message",
+    "sending": "Sending…",
+    "sent": "Message sent. I'll get back to you soon.",
+    "error": "Couldn't send your message. Try again or email me directly.",
+    "required": "Fill in every field with a valid email or WhatsApp number.",
+    "directly": "Or reach me directly",
+    "otherLinks": "Other links",
+    "otherLinksCount": "{count, plural, one {# link} other {# links}}",
+    "rateLimited": "Too many messages right now. Please try again later or reach me directly."
+  },
+  "footer": {
+    "rights": "All rights reserved.",
+    "top": "Back to top"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "back": "Back to home"
+  },
+  "about": {
+    "resume": "Download resume",
+    "workBoth": "Open to remote work worldwide and relocation",
+    "workRemote": "Open to remote work worldwide",
+    "workRelocation": "Open to relocation"
+  },
+  "skills": {
+    "all": "All",
+    "filterLabel": "Filter technologies by category",
+    "openDocs": "Open {name} documentation"
+  },
+  "fields": {
+    "backend": "Backend",
+    "frontend": "Frontend",
+    "databases": "Databases",
+    "devops": "DevOps",
+    "ai": "AI & LLM",
+    "mobile": "Mobile",
+    "desktop": "Desktop",
+    "game": "Game development"
+  },
+  "experiencePage": {
+    "metaTitle": "Experience — Ismoil Sharifov",
+    "metaDescription": "Every position Ismoil Sharifov has held: roles, companies, dates, technologies, and delivered projects. Filter by company, period, tech stack, or field.",
+    "eyebrow": "Career",
+    "title": "All experience",
+    "back": "Back to home",
+    "filtersLabel": "Filter experience",
+    "fields": "Field",
+    "empty": "No experience matches these filters.",
+    "error": "Couldn't load experience. Try again."
+  },
+  "listing": {
+    "company": "Company",
+    "technologies": "Technologies",
+    "period": "Period",
+    "from": "From",
+    "to": "To",
+    "any": "Any",
+    "selected": "{count} selected",
+    "search": "Search…",
+    "noOptions": "No matches",
+    "clearAll": "Clear filters",
+    "clear": "Clear",
+    "prevYear": "Previous year",
+    "nextYear": "Next year",
+    "showing": "Showing {shown} of {total}",
+    "loadMore": "Show {count} more",
+    "loading": "Loading…"
+  },
+  "projectsPage": {
+    "metaTitle": "Projects — Ismoil Sharifov",
+    "metaDescription": "Projects Ismoil Sharifov has built or worked on: web, mobile, desktop, games, CLI tools, plugins, and extensions. Filter by client, technology, product type, or period.",
+    "eyebrow": "Work & projects",
+    "title": "All projects",
+    "back": "Back to home",
+    "filtersLabel": "Filter projects",
+    "types": "Product type",
+    "empty": "No projects match these filters.",
+    "error": "Couldn't load projects. Try again.",
+    "client": "Client",
+    "privateClients": "Private clients",
+    "selfInitiated": "Self-initiated projects"
+  },
+  "projectPage": {
+    "metaTitle": "{name} — Ismoil Sharifov",
+    "back": "All projects",
+    "gallery": "Project gallery",
+    "prev": "Previous",
+    "next": "Next",
+    "openItem": "Open item {n} of {total} full screen",
+    "enlargeHint": "{count, plural, one {Click to view full screen} other {# items · click any to view full screen}}",
+    "type": "Product type",
+    "period": "Development period",
+    "stack": "Tech stack",
+    "about": "About the project",
+    "client": "Client",
+    "clientPrivate": "Private client",
+    "clientSelf": "Self-initiated project",
+    "traffic": "Monthly traffic"
+  },
+  "traffic": {
+    "under100": "Under 100 users",
+    "from100": "100–1,000 users",
+    "from1k": "1,000–10,000 users",
+    "from10k": "10,000–100,000 users",
+    "from100k": "100,000–1 million users",
+    "over1m": "Over 1 million users"
+  },
+  "certificates": {
+    "verify": "Verify certificate",
+    "verifyHint": "Opens the issuer's verification page in a new tab",
+    "verifyUnavailable": "Online verification isn't available for this one",
+    "inProgress": "In progress",
+    "openImage": "View the certificate full screen: {name}",
+    "viewAll": "View all certificates",
+    "viewAllCount": "{count, plural, one {# certificate} other {# certificates}}"
+  },
+  "certificatesPage": {
+    "metaTitle": "Certificates — Ismoil Sharifov",
+    "metaDescription": "Certificates and degrees of Ismoil Sharifov, each with a link to verify it with the issuer. Filter by field of study or period.",
+    "eyebrow": "Certification & education",
+    "title": "All certificates",
+    "back": "Back to home",
+    "filtersLabel": "Filter certificates",
+    "fields": "Field of study",
+    "empty": "No certificates match these filters.",
+    "error": "Couldn't load certificates. Try again."
+  },
+  "studyFields": {
+    "softwareEngineering": "Software engineering",
+    "backend": "Backend development",
+    "frontend": "Frontend development",
+    "fullstack": "Full-stack development",
+    "mobile": "Mobile development",
+    "databases": "Databases",
+    "cloud": "Cloud computing",
+    "devops": "DevOps",
+    "sysadmin": "System administration",
+    "networking": "Computer networks",
+    "security": "Cybersecurity",
+    "ai": "AI & machine learning",
+    "data": "Data science & analytics",
+    "architecture": "Software architecture",
+    "qa": "Testing & QA",
+    "uiux": "UI/UX design",
+    "gamedev": "Game development",
+    "management": "Project management",
+    "languages": "Foreign languages",
+    "civilEngineering": "Civil engineering & architecture"
+  },
+  "testimonials": {
+    "myPosition": "My position",
+    "project": "{count, plural, =1 {Project} other {Projects}}",
+    "verify": "Verify testimony",
+    "verifyHint": "Opens the author's public profile in a new tab",
+    "verifyUnavailable": "The author hasn't shared a public profile",
+    "readAll": "Read all",
+    "showLess": "Show less",
+    "playVideo": "Play the video testimonial from {name}",
+    "openPhoto": "View the photo of {name}",
+    "viewAll": "View all testimonials",
+    "viewAllCount": "{count, plural, one {# testimonial} other {# testimonials}}"
+  },
+  "testimonialsPage": {
+    "metaTitle": "Testimonials — Ismoil Sharifov",
+    "metaDescription": "What colleagues, managers and clients say about working with Ismoil Sharifov, with a link to verify each author.",
+    "eyebrow": "Testimonials",
+    "title": "All testimonials",
+    "back": "Back to home",
+    "filtersLabel": "Filter testimonials",
+    "empty": "No testimonials in this period.",
+    "error": "Couldn't load testimonials. Try again."
+  },
+  "lightbox": {
+    "close": "Close",
+    "prev": "Previous",
+    "next": "Next",
+    "counter": "{current} / {total}",
+    "openItem": "Open item {n} of {total} full screen"
+  }
+}

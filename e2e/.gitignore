@@ -1,0 +1,6 @@
+/node_modules
+# Everything a run writes: E2E admin password, signed-in state, browser profiles, temp files.
+/.tmp
+/test-results
+/playwright-report
+/blob-report

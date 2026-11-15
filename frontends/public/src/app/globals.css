@@ -1,0 +1,375 @@
+/* Scan only this app's src/ for classes, whatever folder the dev server is started from. */
+@import "tailwindcss" source("..");
+
+/*
+  Palette taken from redoyanulhaque.me, with every purple hue rotated to blue:
+  #0b080c -> #080a0f (background)   #eae5ec -> #e5e9f0 (text)
+  #c2a4ff -> #a4c4ff (accent)       #aa42ff -> #4287ff (accent strong)
+  #e6c3ff -> #c3dcff (accent soft)  #fb8dff -> #8dcbff (glow)
+*/
+@theme {
+  --color-bg: #080a0f;
+  --color-fg: #e5e9f0;
+  --color-muted: rgb(255 255 255 / 0.7);
+  --color-subtle: #adacac;
+  --color-faint: #5e5e5e;
+  --color-accent: #a4c4ff;
+  --color-accent-strong: #4287ff;
+  --color-accent-soft: #c3dcff;
+  --color-glow: #8dcbff;
+  --color-surface: #0e121a; /* solid background for popovers/dropdowns */
+  --color-card: rgb(255 255 255 / 0.03);
+  --color-card-hover: rgb(255 255 255 / 0.06);
+  --color-line: rgb(255 255 255 / 0.1);
+  --color-line-strong: rgb(255 255 255 / 0.2);
+  /* "Ink" for faint overlays (hover tints, underlines): white on dark, navy on light. */
+  --color-tint: #ffffff;
+
+  /* Fonts from abdallaahmed.icu (Space Grotesk + Tajawal); Manrope fills in Cyrillic for ru/tg. */
+  --font-display: var(--font-space-grotesk), var(--font-manrope), system-ui, sans-serif;
+  --font-sans: var(--font-tajawal), var(--font-manrope), system-ui, sans-serif;
+
+  --animate-float: float 12s ease-in-out infinite;
+  --animate-float-slow: float 18s ease-in-out infinite reverse;
+  --animate-fade-up: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-bob: bob 6s ease-in-out infinite;
+  --animate-nudge: nudge 1.6s ease-in-out infinite;
+  --animate-nudge-lg: nudge-lg 1.6s ease-in-out infinite;
+
+  /* Bigger downward nudge for the large standalone arrows. */
+  @keyframes nudge-lg {
+    0%, 100% { transform: translateY(-2px); }
+    50% { transform: translateY(6px); }
+  }
+  --animate-bob-soft: bob-soft 6s ease-in-out infinite;
+  --animate-float-tile: float-tile 7s ease-in-out infinite;
+  --animate-tile-in: tile-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  /* Tech-stack tiles: slow, small drift (4px) — calm constant motion. */
+  @keyframes float-tile {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  /* Tiles that remain after a filter change pop back in. */
+  @keyframes tile-in {
+    from { opacity: 0; transform: scale(0.85); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  /* Half the movement of `bob`, for calmer floating cards. */
+  @keyframes bob-soft {
+    0%, 100% { transform: translateY(0) rotate(-0.5deg); }
+    50% { transform: translateY(-7px) rotate(0.5deg); }
+  }
+
+  /* Hero jump cards drift up and down like they're floating. */
+  @keyframes bob {
+    0%, 100% { transform: translateY(0) rotate(-1deg); }
+    50% { transform: translateY(-14px) rotate(1deg); }
+  }
+  /* Arrow repeatedly points down to where the link takes you. */
+  @keyframes nudge {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(4px); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(30px, -40px) scale(1.08); }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* ───────── Themes ─────────
+   Dark is the default (the @theme values above). <html data-theme="light"> swaps every color
+   token below, so all utilities (bg-bg, text-muted, border-line, bg-accent/40 …) follow.
+   The choice is stored in localStorage and applied before the first paint (layout.tsx).
+   `light:` = a Tailwind variant for the few things that need more than a token swap. */
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+
+:root {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+  /* Drop shadow under popovers (tooltips, dropdowns, link circles). */
+  --pop-shadow: rgb(0 0 0 / 0.8);
+  /* Mouse-follow light's rim (Spotlight), as "r g b". */
+  --spot-rim: 164 196 255;
+}
+
+/* Same blue identity on a cool off-white: the accent is deepened so text and buttons keep
+   their contrast (#2563eb is 4.9:1 on the background), lines and tints become navy. */
+[data-theme="light"] {
+  color-scheme: light;
+  --color-bg: #f5f7fb;
+  --color-fg: #0c1322;
+  --color-muted: rgb(12 19 34 / 0.72);
+  --color-subtle: #5a6372;
+  --color-faint: #8a92a0;
+  --color-accent: #2563eb;
+  --color-accent-strong: #1d4ed8;
+  --color-accent-soft: #3b82f6;
+  --color-glow: #60a5fa;
+  --color-surface: #ffffff;
+  --color-card: rgb(255 255 255 / 0.72);
+  --color-card-hover: #ffffff;
+  --color-line: rgb(12 19 34 / 0.1);
+  --color-line-strong: rgb(12 19 34 / 0.2);
+  --color-tint: #0c1322;
+  --pop-shadow: rgb(15 23 42 / 0.16);
+  --spot-rim: 59 130 246;
+}
+
+/* Parts that stay dark in both themes (the full-screen photo/video viewer) restate the dark palette. */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #080a0f;
+  --color-fg: #e5e9f0;
+  --color-muted: rgb(255 255 255 / 0.7);
+  --color-subtle: #adacac;
+  --color-faint: #5e5e5e;
+  --color-accent: #a4c4ff;
+  --color-accent-strong: #4287ff;
+  --color-accent-soft: #c3dcff;
+  --color-glow: #8dcbff;
+  --color-surface: #0e121a;
+  --color-card: rgb(255 255 255 / 0.03);
+  --color-card-hover: rgb(255 255 255 / 0.06);
+  --color-line: rgb(255 255 255 / 0.1);
+  --color-line-strong: rgb(255 255 255 / 0.2);
+  --color-tint: #ffffff;
+  --pop-shadow: rgb(0 0 0 / 0.8);
+  --spot-rim: 164 196 255;
+}
+
+/* Theme switch: the new theme spreads as a circle from the toggle (ThemeToggle.tsx). */
+:root.theme-switching::view-transition-old(root),
+:root.theme-switching::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* Tailwind v4 resets buttons to the default arrow cursor; bring back the hand everywhere.
+   (Unlayered, so it beats Tailwind's cursor utilities on buttons — exceptions are listed below.) */
+button:not(:disabled),
+[role="button"]:not(:disabled) {
+  cursor: pointer;
+}
+/* Buttons that look disabled but stay focusable (to show a tooltip explaining why). */
+button[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* "In progress" on certificates: the green of the "Open to remote work" dot, with a slow
+   heartbeat (two quick glows, then a rest). Only the glow around the letters pulses —
+   the letters stay solid and sharp, so the text is always readable. */
+.status-live {
+  color: #34d399; /* emerald-400 */
+  animation: heartbeat-glow 2.6s ease-in-out infinite;
+}
+@keyframes heartbeat-glow {
+  0%, 45%, 100% { text-shadow: 0 0 0 rgb(52 211 153 / 0); }
+  10% { text-shadow: 0 0 6px rgb(52 211 153 / 0.7), 0 0 14px rgb(52 211 153 / 0.3); }
+  19% { text-shadow: 0 0 2px rgb(52 211 153 / 0.25); }
+  28% { text-shadow: 0 0 7px rgb(52 211 153 / 0.75), 0 0 16px rgb(52 211 153 / 0.35); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .status-live { animation: none; text-shadow: 0 0 6px rgb(52 211 153 / 0.45); }
+}
+/* On white the bright green is too pale to read: a deeper green, softer glow. */
+[data-theme="light"] .status-live { color: #059669; animation-name: heartbeat-glow-light; }
+@keyframes heartbeat-glow-light {
+  0%, 45%, 100% { text-shadow: 0 0 0 rgb(5 150 105 / 0); }
+  10% { text-shadow: 0 0 6px rgb(5 150 105 / 0.35); }
+  19% { text-shadow: 0 0 2px rgb(5 150 105 / 0.15); }
+  28% { text-shadow: 0 0 7px rgb(5 150 105 / 0.4); }
+}
+
+/* ───────── Project gallery (app/[locale]/projects/[slug]) ───────── */
+button.gallery-slide:not(:disabled),
+button.zoomable:not(:disabled) { cursor: zoom-in; }
+.gallery-track[data-dragging] { scroll-snap-type: none; cursor: grabbing; }
+.gallery-track[data-dragging] .gallery-slide { cursor: grabbing; }
+.lightbox[open] { animation: lightbox-in 0.22s ease-out; }
+.lightbox[open]::backdrop { animation: lightbox-fade 0.22s ease-out; }
+@keyframes lightbox-in {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes lightbox-fade {
+  from { opacity: 0; }
+}
+@keyframes lightbox-media {
+  from { opacity: 0; transform: scale(0.97); }
+}
+
+/* Custom pointing-hand cursor on project cards (public/cursors/*.svg, hotspot = fingertip).
+   It switches to a "pressed" hand while the mouse button is down. Falls back to the normal hand. */
+.cursor-hand,
+.cursor-hand :is(a, button) {
+  cursor: url("/cursors/hand.svg") 16 7, pointer;
+}
+.cursor-hand:active,
+.cursor-hand :is(a, button):active {
+  cursor: url("/cursors/hand-press.svg") 16 7, pointer;
+}
+.cursor-hand [aria-disabled="true"],
+.cursor-hand [aria-disabled="true"]:active {
+  cursor: not-allowed;
+}
+
+::selection {
+  background: var(--color-accent-strong);
+  color: #fff;
+}
+
+/* ───────── Experience timeline (scroll-driven, see components/experience/ExperienceTimeline.tsx) ─────────
+   Line colors/glow follow redoyanulhaque.me, purple swapped for blue. */
+[data-timeline] {
+  --tl-x: 8px;    /* horizontal center of the line */
+  --tl-pl: 2rem;  /* space between the line and the cards */
+}
+@media (min-width: 640px) {
+  [data-timeline] { --tl-x: 12px; --tl-pl: 3rem; }
+}
+.tl-list { padding-left: var(--tl-pl); }
+.tl-track {
+  position: absolute; top: 0; bottom: 0; width: 1px;
+  left: calc(var(--tl-x) - 0.5px);
+  background: var(--color-line);
+}
+/* The glowing line that grows with scroll — bright at its tip, fading out toward the top. */
+.tl-line {
+  position: absolute; top: 0; width: 3px; border-radius: 3px;
+  left: calc(var(--tl-x) - 1.5px);
+  height: var(--tl-progress, 0px);
+  background-image: linear-gradient(to top, #4287ff 20%, #a4c4ff 50%, transparent 95%);
+}
+/* The glowing ball at the line's tip — a steady glow (no flicker). */
+.tl-tip {
+  position: absolute; z-index: 1; width: 10px; height: 10px; border-radius: 9999px;
+  left: var(--tl-x); top: var(--tl-progress, 0px);
+  transform: translate(-50%, -50%);
+  background: #4287ff;
+  box-shadow: 0 0 5px 2px #9bc3ff, 0 0 15px 5px #97beff, 0 0 110px 20px rgb(192 220 255 / 0.45);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+[data-tl-state="active"] .tl-tip,
+[data-tl-state="done"] .tl-tip { opacity: 1; }
+/* Each card's dot on the line: grey until the tip reaches it, then lit. */
+.tl-dot {
+  position: absolute; z-index: 2; width: 12px; height: 12px; border-radius: 9999px;
+  top: 2.4rem;
+  left: calc(var(--tl-x) - var(--tl-pl));
+  transform: translate(-50%, -50%);
+  background: var(--color-bg);
+  border: 2px solid var(--color-line-strong);
+  transition: background-color 0.5s, border-color 0.5s, box-shadow 0.5s;
+}
+@media (min-width: 640px) { .tl-dot { top: 3rem; } }
+[data-alive] > .tl-dot {
+  background: #4287ff;
+  border-color: #a4c4ff;
+  box-shadow: 0 0 0 4px rgb(66 135 255 / 0.2), 0 0 14px 3px rgb(66 135 255 / 0.6);
+}
+/* Cards stay grey (like the tech tiles at rest) until the line revives them.
+   Only once JS is running — without JS everything is shown in full color. */
+.tl-card { transition: filter 0.7s ease, opacity 0.7s ease; }
+[data-timeline-ready] [data-timeline-item]:not([data-alive]) .tl-card {
+  filter: grayscale(1) brightness(0.85);
+  opacity: 0.55;
+}
+/* Darkening white cards would make them look dirty: only grey them out. */
+[data-theme="light"] [data-timeline-ready] [data-timeline-item]:not([data-alive]) .tl-card {
+  filter: grayscale(1);
+}
+
+/* Brief glow on a card reached through a link (#project-…, #testimonial-…), see HashHighlight. */
+[data-flash] { animation: target-flash 2.2s ease-out; }
+@keyframes target-flash {
+  0%, 35% { box-shadow: 0 0 0 2px #a4c4ff, 0 0 40px -4px rgb(66 135 255 / 0.8); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.anchor-target { scroll-margin-top: 6rem; }
+
+/* ───────── "Other links" fan (Contact tile + side rail) (see components/other-links/OtherLinks.tsx + arc-layout.ts) ─────────
+   Open: the page behind dims and blurs; each circle flies out of the button (--fx/--fy = the
+   button's center relative to the circle) with a slight springy overshoot, inner arcs first,
+   then floats gently. Close: they shoot back into the button in reverse order, then the blur
+   clears. --so / --sc = per-circle delay (ms) when opening / closing. */
+.arc-backdrop { opacity: 0; transition: opacity 0.175s ease var(--bd-delay, 0ms); }
+.arc-stage[data-shown] .arc-backdrop { opacity: 1; transition-delay: 0ms; }
+.arc-orb {
+  transition:
+    transform 0.35s cubic-bezier(0.34, 1.3, 0.64, 1) calc(var(--i) * var(--so) * 1ms),
+    opacity 0.15s ease calc(var(--i) * var(--so) * 1ms);
+}
+.arc-stage:not([data-shown]) .arc-orb {
+  opacity: 0;
+  transform: translate(var(--fx, 0px), var(--fy, 0px)) scale(0.3);
+  transition:
+    transform 0.225s cubic-bezier(0.55, 0, 0.75, 0.25) calc(var(--ri) * var(--sc) * 1ms),
+    opacity 0.125s ease calc(var(--ri) * var(--sc) * 1ms + 100ms);
+}
+.arc-stage[data-shown] .orb-float {
+  animation: orb-float var(--float-dur, 6s) ease-in-out var(--float-delay, 0s) infinite;
+}
+@keyframes orb-float {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(1px, -2.5px); }
+  66% { transform: translate(-1px, 1.5px); }
+}
+
+/* Scroll-reveal: <Reveal> adds .reveal-pending only to off-screen elements after hydration,
+   so content is never hidden for crawlers or if JavaScript fails. */
+[data-reveal] {
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-reveal].reveal-pending {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  [data-reveal].reveal-pending { opacity: 1; transform: none; }
+}
+
+/* Icons stored by the admin panel as SVG text are drawn through a mask, so they take any color
+   (brand color, accent, theme) and the SVG never becomes part of the page's markup. */
+.svg-mask {
+  display: inline-block;
+  background-color: currentColor;
+  mask: var(--svg) center / contain no-repeat;
+  -webkit-mask: var(--svg) center / contain no-repeat;
+}
+
+/* Experience descriptions (rich text from the admin panel): the look of the former bullet lists. */
+.rich-text > * + * { margin-top: 0.75rem; }
+.rich-text ul, .rich-text ol { display: grid; gap: 0.75rem; }
+.rich-text ul > li { position: relative; padding-left: 1.25rem; }
+.rich-text ul > li::before {
+  content: "";
+  position: absolute; left: 0.1rem; top: 0.6em;
+  width: 6px; height: 6px; border-radius: 9999px;
+  background: var(--color-accent);
+}
+.rich-text ol { list-style: decimal; padding-left: 1.25rem; }
+.rich-text li > p { margin: 0; }
+.rich-text strong, .rich-text b { font-weight: 600; color: var(--color-fg); }
+.rich-text a { color: var(--color-accent); text-decoration: underline; text-underline-offset: 3px; }
+.rich-text a:hover { text-decoration-color: currentColor; }

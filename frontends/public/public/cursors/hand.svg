@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="-4 -4 30 30">
+  <!-- Pointing hand for project cards (hotspot = fingertip: 16 7). Based on Lucide's "pointer" icon (ISC). -->
+  <defs>
+    <linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#c3dcff"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="0" stdDeviation="1.1" flood-color="#4287ff" flood-opacity="0.95"/>
+    </filter>
+  </defs>
+  <path filter="url(#glow)" fill="url(#fill)" stroke="#0b1530" stroke-width="1.4" stroke-linejoin="round"
+        d="M6 14V4a2 2 0 0 1 4 0v5a2 2 0 0 1 4 0v1a2 2 0 0 1 4 0v1a2 2 0 0 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L6 14Z"/>
+  <path d="M10 9v3.4M14 10v2.6M18 11v2.2" fill="none" stroke="#0b1530" stroke-width="1.1" stroke-linecap="round" opacity="0.5"/>
+</svg>

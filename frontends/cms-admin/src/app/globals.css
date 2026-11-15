@@ -1,0 +1,136 @@
+/* Scan only this app's src/ for classes, whatever folder the dev server is started from. */
+@import "tailwindcss" source("..");
+
+/* Same palette, fonts and themes as the public site (frontends/public/src/app/globals.css). */
+@theme {
+  --color-bg: #080a0f;
+  --color-fg: #e5e9f0;
+  --color-muted: rgb(255 255 255 / 0.7);
+  --color-subtle: #adacac;
+  --color-faint: #5e5e5e;
+  --color-accent: #a4c4ff;
+  --color-accent-strong: #4287ff;
+  --color-accent-soft: #c3dcff;
+  --color-glow: #8dcbff;
+  --color-surface: #0e121a;
+  --color-card: rgb(255 255 255 / 0.03);
+  --color-card-hover: rgb(255 255 255 / 0.06);
+  --color-line: rgb(255 255 255 / 0.1);
+  --color-line-strong: rgb(255 255 255 / 0.2);
+  --color-tint: #ffffff;
+  /* Form-specific: error and success tones that stay readable on both themes. */
+  --color-danger: #f87171;
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+
+  --font-display: var(--font-space-grotesk), var(--font-manrope), system-ui, sans-serif;
+  --font-sans: var(--font-tajawal), var(--font-manrope), system-ui, sans-serif;
+
+  --animate-float: float 12s ease-in-out infinite;
+  --animate-float-slow: float 18s ease-in-out infinite reverse;
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-pop-in: pop-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(30px, -40px) scale(1.08); }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+
+:root {
+  color-scheme: dark;
+  --pop-shadow: rgb(0 0 0 / 0.8);
+  --spot-rim: 164 196 255;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --color-bg: #f5f7fb;
+  --color-fg: #0c1322;
+  --color-muted: rgb(12 19 34 / 0.72);
+  --color-subtle: #5a6372;
+  --color-faint: #8a92a0;
+  --color-accent: #2563eb;
+  --color-accent-strong: #1d4ed8;
+  --color-accent-soft: #3b82f6;
+  --color-glow: #60a5fa;
+  --color-surface: #ffffff;
+  --color-card: rgb(255 255 255 / 0.72);
+  --color-card-hover: #ffffff;
+  --color-line: rgb(12 19 34 / 0.1);
+  --color-line-strong: rgb(12 19 34 / 0.2);
+  --color-tint: #0c1322;
+  --color-danger: #dc2626;
+  --color-success: #059669;
+  --color-warning: #b45309;
+  --pop-shadow: rgb(15 23 42 / 0.16);
+  --spot-rim: 59 130 246;
+}
+
+:root.theme-switching::view-transition-old(root),
+:root.theme-switching::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button:not(:disabled),
+[role="button"]:not(:disabled) {
+  cursor: pointer;
+}
+button[aria-disabled="true"],
+button:disabled {
+  cursor: not-allowed;
+}
+
+::selection {
+  background: var(--color-accent-strong);
+  color: #fff;
+}
+
+/* Icons stored as SVG text (selectors) are drawn through a mask, so they take any color. */
+.svg-mask {
+  display: inline-block;
+  background-color: currentColor;
+  mask: var(--svg) center / contain no-repeat;
+  -webkit-mask: var(--svg) center / contain no-repeat;
+}
+
+/* Rich text (experience descriptions): the same look as on the public site. */
+.rich-text p { margin: 0.35rem 0; }
+.rich-text ul { list-style: disc; padding-left: 1.25rem; margin: 0.35rem 0; }
+.rich-text ol { list-style: decimal; padding-left: 1.25rem; margin: 0.35rem 0; }
+.rich-text li { margin: 0.15rem 0; }
+.rich-text li > p { margin: 0; }
+.rich-text a { color: var(--color-accent); text-decoration: underline; text-underline-offset: 3px; }
+.rich-text strong, .rich-text b { font-weight: 700; color: var(--color-fg); }
+.rich-text :first-child { margin-top: 0; }
+.ProseMirror { outline: none; min-height: 9rem; }
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--color-faint);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

@@ -1,0 +1,16 @@
+# Packages the app needs. Exact versions are in requirements.lock; install with `-c requirements.lock` (see README.md).
+fastapi
+uvicorn[standard]
+sqlalchemy[asyncio]
+asyncpg
+alembic
+pydantic-settings
+email-validator
+argon2-cffi
+nh3
+pillow
+python-multipart
+aioboto3
+anthropic
+tzdata
+defusedxml

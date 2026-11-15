@@ -1,0 +1,22 @@
+# Safety net for the whole repository. Each app also has its own .gitignore.
+
+# npm cache, kept inside the repo on purpose
+.npm-cache/
+
+# Secrets: never commit, in any folder
+.env
+.env.*
+!.env.example
+.dev-credentials
+*.pem
+*.key
+
+# Personal Claude Code settings (permissions, local paths)
+.claude/settings.local.json
+
+# Logs, OS and editor files
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -1,0 +1,7 @@
+# The app's packages + test and lint tools. Install with `-c requirements.lock` (see README.md).
+-r requirements.txt
+pytest
+pytest-asyncio
+httpx
+moto[s3,server]
+ruff
