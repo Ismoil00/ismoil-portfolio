@@ -200,10 +200,6 @@ class PublicService:
             **self.bounds([(e.start_month, e.end_month) for e in records]).model_dump(),
         )
 
-    async def experience_summary(self) -> s.ExperienceSummary:
-        ranges = await self.repo.experience_ranges()
-        return s.ExperienceSummary(roles=len(ranges), months=total_months(ranges))
-
     # --- projects -------------------------------------------------------------------------------
 
     def cover(self, p: Project) -> s.MediaItem | None:

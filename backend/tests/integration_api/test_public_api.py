@@ -64,7 +64,7 @@ async def test_skills(client, seeded):
     assert python["categories"] and set(python["categories"]) <= category_ids
 
 
-async def test_experience_list_filters_and_summary(client, seeded):
+async def test_experience_list_and_filters(client, seeded):
     page = (await client.get(f"{P}/experience", params={"lang": "en", "offset": 0, "limit": 2})).json()
     assert page["total"] == 3 and len(page["items"]) == 2
     first = page["items"][0]
@@ -83,8 +83,10 @@ async def test_experience_list_filters_and_summary(client, seeded):
     in_2023 = (await client.get(f"{P}/experience", params={"lang": "en", "from": "2023-01", "to": "2023-12"})).json()
     assert in_2023["total"] == 1
 
-    summary = (await client.get(f"{P}/experience/summary")).json()
-    assert summary == {"roles": 3, "months": 41}
+
+async def test_there_is_no_separate_experience_summary(client, seeded):
+    """Roles and months of experience come with the profile's stats; no second endpoint repeats them."""
+    assert (await client.get(f"{P}/experience/summary")).status_code == 404
 
 
 async def test_projects(client, seeded, auth_client):

@@ -46,7 +46,9 @@ Real environment variables (Docker, hosting panel) override `.env`, so a server 
 | `.venv/Scripts/python -m app.cli cleanup` | Delete uploads nothing uses after 24 h, old login attempts and expired sessions; run it on a schedule once deployed |
 
 Database changes: edit the models in `app/models/`, then `.venv/Scripts/alembic revision --autogenerate -m "what changed"`,
-check the new file in `alembic/versions/`, and apply it with `.venv/Scripts/alembic upgrade head`.
+check the new file in `alembic/versions/`, and apply it with `.venv/Scripts/alembic upgrade head`. Finally refresh the
+architecture site's database data with `.venv/Scripts/python scripts/export_architecture_db.py`
+(`tests/unit/test_architecture_db.py` fails until you do).
 
 ## Packages
 
@@ -85,7 +87,7 @@ Add or update a package:
 | --- | --- | --- |
 | `app/` | The application | Yes |
 | `alembic/` | Database migrations | Yes |
-| `scripts/` | One-time database setup | Yes |
+| `scripts/` | One-time database setup; the architecture site's database export | Yes |
 | `seed/` | Starting content for an empty database | Yes |
 | `tests/` | Unit and API integration tests | Yes |
 | `storage/` | Uploaded files in development | No |

@@ -136,11 +136,6 @@ class ExperienceFilters(PublicModel):
     max_date: str | None
 
 
-class ExperienceSummary(PublicModel):
-    roles: int
-    months: int
-
-
 # --- projects -----------------------------------------------------------------------------------
 
 

@@ -121,7 +121,7 @@ Every URL: `http(s)` only, ≤ 2048. Dates can't be in the future; "to" can't be
 
 **Public** (no auth; `?lang=en|ru|tg`; shapes match `frontends/public/src/types/content.ts`, updated where the data changed)
 `GET /public/profile` (hero + about + contacts + other links + all 6 stats) · `GET /public/skills` ·
-`GET /public/experience[/filters|/summary]` · `GET /public/projects[/filters|/slugs|/{slug}]` ·
+`GET /public/experience[/filters]` · `GET /public/projects[/filters|/slugs|/{slug}]` ·
 `GET /public/certificates[/filters]` · `GET /public/testimonials[/filters]` · `POST /public/contact` · `GET /health`
 
 **Files** `GET /media/{key}` — outside `/api/v1`, local storage only (S3 serves its own files)
@@ -171,6 +171,7 @@ frontends/public/      the CV site (Next.js 16, React 19, Tailwind 4, next-intl)
 frontends/cms-admin/   same stack and structure as frontends/public (+ axios, TipTap, dnd-kit)
 e2e/                   end-to-end tests with Playwright: a real browser on both apps + the backend
 docs/                  this plan
+architecture_visually_explained/   interactive map of the system (HTML/CSS/JS; open index.html)
 ```
 
 Each of `backend/`, `frontends/public/`, `frontends/cms-admin/` and `e2e/` has a README with its setup and commands.

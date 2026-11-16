@@ -160,13 +160,6 @@ export interface ExperienceFilterOptions {
   maxDate: string | null;
 }
 
-/** Numbers for the hero jump cards. */
-export interface ExperienceSummary {
-  roles: number;
-  /** Total months worked; overlapping jobs count once. */
-  months: number;
-}
-
 // --- testimonials -------------------------------------------------------------------------------
 
 export interface Testimonial {

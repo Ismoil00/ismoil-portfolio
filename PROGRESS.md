@@ -2,7 +2,7 @@
 
 Plan and decisions: [`docs/PLAN.md`](docs/PLAN.md). Resume from the first unchecked item.
 
-_Last updated: 2026-11-15 (docs pass + pre-commit audit) — backend: 303 tests passing + ruff clean; admin and public: tsc + eslint clean; public `next build` passes; E2E: 37 passing_
+_Last updated: 2026-11-16 (architecture site; unused experience summary endpoint removed) — backend: 307 tests passing + ruff clean; admin and public: tsc + eslint clean; public `next build` passes; E2E: 37 passing_
 
 ## Phases
 
@@ -27,7 +27,7 @@ _Last updated: 2026-11-15 (docs pass + pre-commit audit) — backend: 303 tests 
   - One-off export (Node, type-stripping) of frontends/public/src/data/content (en/ru/tg/shared, NOT fake/) + messages labels + icon SVGs (react-icons rendered to markup) → `backend/seed/content.json` (committed). `python -m app.cli seed` loads it into an EMPTY database (refuses otherwise) + uploads the résumé PDF.
   - Real data lacks some now-required fields: project traffic (×3), diploma image + verify link. Never invent them: DB columns `projects.traffic` and `certificates.verify_url` become nullable (API/forms still require them on save), public hides them when empty, admin lists flag "Missing …".
   - Selectors seeded: dev fields = experience fields ∪ study fields (+ tech categories Databases/Frontend/AI & LLM), instruments = Languages & frameworks / APIs & protocols / Tools, 43 techs (+ "Micro-frontends", "OpenAPI" used by experience/projects, not shown), 8 product types, positions from real roles, companies Smartpay + Vatan ICT, institute TTU, 16 link platforms (LinkIcon list).
-- [x] **10. Public site** — public endpoints (`/public/profile|skills|experience[/filters|/summary]|projects[/filters|/slugs|/{slug}]|certificates[/filters]|testimonials[/filters]`, schemas in `app/schemas/public.py`) and the site switched to them:
+- [x] **10. Public site** — public endpoints (`/public/profile|skills|experience[/filters]|projects[/filters|/slugs|/{slug}]|certificates[/filters]|testimonials[/filters]`, schemas in `app/schemas/public.py`) and the site switched to them:
   - `src/types/content.ts` = the API shapes; `src/api/*.api.ts` call the backend (server-only `API_URL` in `frontends/public/.env.local`); list pages load more through Server Actions; the contact form is a Server Action (honeypot, rate-limit message).
   - Deleted: `src/data` (static + fake data), `api/static`, `LinkIcon`, `product-types`, `tech-icons`, unused messages (`productTypes`, `experience.workMode`).
   - Icons from the DB → `components/ui/SvgIcon.tsx`; experience description = sanitized HTML in `.rich-text`; certificates show all images in the lightbox; testimonials list several projects ("Project"/"Projects" in 3 languages).
@@ -45,6 +45,11 @@ _Last updated: 2026-11-15 (docs pass + pre-commit audit) — backend: 303 tests 
   - Backend packages: install with `-c requirements.lock` (a server install gets no test tools; checked with pip dry runs), guarded by `tests/unit/test_requirements.py`. pytest temp files pinned to `backend/.tmp` (`tests/unit/test_temp_location.py`).
   - Pre-commit audit: the 355 files to commit hold no secrets (real `.env` / `.dev-credentials` values and key patterns checked); every `.env`, credentials, cache, build, report and upload folder is ignored. Removed: pip and npm install logs, 5 create-next-app SVGs, unused `Tag.tsx` and `lib/urls.ts` in the public site. Added: root `README.md`, `.gitattributes`. All npm and Python dependencies are in use. Checks after: 303 backend tests + ruff, tsc + eslint on both apps, E2E 37/37.
 
+- [x] **14. Architecture site** (2026-11-16) — `architecture_visually_explained/`: plain HTML/CSS/JS, opens from disk (or `architecture` in launch.json, port 3005). Views: system map (clickable boxes/arrows, animated journeys), backend layers + feature matrix + error codes, both frontends (request path, every page → backend calls), database (entity / all-tables map, focus view per table, delete behaviour, CHECK rules, other objects, conventions), step-by-step sequence diagrams, search.
+  - Database facts are generated from the models: `backend/scripts/export_architecture_db.py` → `data/db-schema.generated.js`; `tests/unit/test_architecture_db.py` fails when the models change and the file isn't regenerated. Meaning, layout and the other views are hand-written in `data/*.js`.
+  - Checked in the browser: every view, clicks, journeys, focus view, search, light/dark, phone width (no sideways scroll), no console errors.
+  - Found while mapping: `GET /public/experience/summary` and the public site's `getExperienceSummary` were unused (the hero gets the same roles and months from `/public/profile` stats). Removed from both sides (route, service method, schemas, TS type, endpoint key); `test_there_is_no_separate_experience_summary` checks it stays gone.
+
 ## Next steps
 
 1. The user creates their own admin (`cd backend && .venv/Scripts/python -m app.cli create-admin`), then removes the temporary one (`python -m app.cli delete-admin --email dev-admin@example.com`) and `.dev-credentials` (repo root).
@@ -54,7 +59,7 @@ _Last updated: 2026-11-15 (docs pass + pre-commit audit) — backend: 303 tests 
 
 ## Notes for resuming
 
-- Setup and commands per project: [`backend/README.md`](backend/README.md), [`frontends/public/README.md`](frontends/public/README.md), [`frontends/cms-admin/README.md`](frontends/cms-admin/README.md), [`e2e/README.md`](e2e/README.md). Keep `docs/PLAN.md` in line with the code when something changes.
+- Setup and commands per project: [`backend/README.md`](backend/README.md), [`frontends/public/README.md`](frontends/public/README.md), [`frontends/cms-admin/README.md`](frontends/cms-admin/README.md), [`e2e/README.md`](e2e/README.md). Keep `docs/PLAN.md` and the architecture site (`architecture_visually_explained/`, see its README) in line with the code when something changes.
 - Backend packages: Always install with `-c requirements.lock` (exact versions; a server install from `requirements.txt` gets no test tools). `tests/unit/test_requirements.py` guards the lock.
 - Run things: `.claude/launch.json` has `public` (3000), `admin` (3001), `backend` (8000).
   Backend tests: `cd backend && .venv/Scripts/python -m pytest` (unit + integration_api; the latter needs the databases).

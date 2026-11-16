@@ -9,6 +9,7 @@ Ismoil Sharifov's portfolio and CV site in English, Russian and Tajik, with an a
 | `frontends/cms-admin/` | The admin panel (Next.js) | [`frontends/cms-admin/README.md`](frontends/cms-admin/README.md) |
 | `e2e/` | End-to-end tests (Playwright) across all three | [`e2e/README.md`](e2e/README.md) |
 | `docs/` | The plan: decisions, data model, API, security | [`docs/PLAN.md`](docs/PLAN.md) |
+| `architecture_visually_explained/` | Interactive map of the whole system: open `index.html` | [`README.md`](architecture_visually_explained/README.md) |
 
 Where the work stands and what comes next: [`PROGRESS.md`](PROGRESS.md).
 

@@ -1,0 +1,86 @@
+// Step-by-step journeys through the system. Each step: from lane → to lane (same lane = work inside it).
+window.ARCH = window.ARCH || {};
+
+window.ARCH.flows = [
+  {
+    id: "visit", title: "A visitor opens /en/projects",
+    lanes: ["Browser", "Public site", "Backend", "PostgreSQL"],
+    steps: [
+      [0, 1, "GET /en/projects", "The browser asks the public site for the page. src/proxy.ts (next-intl) keeps /en in the URL; a bare / would redirect to /en or the browser's language."],
+      [1, 2, "GET /api/v1/public/profile?lang=en", "app/[locale]/layout.tsx reads the profile for the header and footer, and the testimonials list to decide whether the menu shows that link. These calls run on the Next.js server; API_URL never reaches the browser."],
+      [1, 2, "GET /public/projects/filters · /public/projects?offset=0&limit=10", "projects/page.tsx (a server component) asks src/api/projects.api.ts for the filter options and the first 10 projects. Filters from the URL (?tech=…) are passed along."],
+      [2, 2, "middleware → public router → PublicService", "Security headers, CORS and the body cap wrap the request. Public routes need no session. PublicService picks one language and computes values such as file URLs."],
+      [2, 3, "SELECT … (filters and paging in SQL)", "repositories/public.py builds the query: joins to companies, technologies and types; filters and LIMIT/OFFSET run in the database, not in Python."],
+      [3, 2, "rows", "Only published data: private projects come without links or gallery."],
+      [2, 1, "JSON (camelCase, one language)", "schemas/public.py shapes the answer to match frontends/public/src/types/content.ts."],
+      [1, 0, "HTML", "The page is rendered on the server per request, so an admin edit shows on the next load. Images and videos load straight from the backend's file address."],
+      [0, 1, "Show more → Server Action", "ProjectsExplorer calls loadProjectsPage (src/api/projects.actions.ts) on the Next.js server, which asks the backend for offset=10. The new cards are added to the list."],
+    ],
+  },
+  {
+    id: "login", title: "The admin signs in",
+    lanes: ["Browser", "Admin panel", "Backend", "PostgreSQL"],
+    steps: [
+      [0, 1, "GET /hero", "src/proxy.ts sees no session cookie and redirects to /login?next=/hero. This is only a fast path; the backend makes the real decision."],
+      [0, 1, "POST /api/v1/auth/login {email, password}", "LoginForm posts to the panel's own address."],
+      [1, 2, "rewrite → backend", "next.config.ts forwards /api/* to the backend, so the cookie the backend sets belongs to the panel's address (first-party, no CORS)."],
+      [2, 3, "count failures (15 min)", "AuthService asks login_attempts for recent failures: more than 5 from this IP hash or 20 in total → 429 with Retry-After."],
+      [2, 2, "verify Argon2id", "The user is found by email. If no user exists, a dummy hash is checked anyway, so timing doesn't reveal which emails exist. The attempt is recorded either way."],
+      [2, 3, "INSERT admin_sessions", "Two random tokens are made; only their hashes are stored, with expiry: 12 h without use, 7 days at most."],
+      [2, 0, "Set-Cookie session + csrf", "session is HttpOnly (scripts can't read it); csrf is readable so the panel can echo it in X-CSRF-Token. Both SameSite=Strict, with the __Host- prefix and Secure in production."],
+      [0, 1, "GET /hero (with cookies)", "app/(panel)/layout.tsx calls GET /auth/me with the visitor's cookies before any page renders; an expired session goes back to /login."],
+    ],
+  },
+  {
+    id: "save", title: "The admin saves a project with a new image",
+    lanes: ["Browser", "Admin panel", "Backend", "Storage", "PostgreSQL"],
+    steps: [
+      [0, 2, "POST /admin/media (multipart) + X-CSRF-Token", "Step 1 of 2: the file is uploaded on its own, with a progress bar (through the panel's rewrite)."],
+      [2, 2, "guard: session · Origin · CSRF", "current_admin checks the session, that the Origin is an allowed admin origin, and that the CSRF header matches the session. The body cap (110 MB) applies while streaming."],
+      [2, 2, "check the file", "MediaService: type from the first bytes (never the name), size limit for project_image (10 MB), Pillow opens it, camera/GPS metadata stripped."],
+      [2, 3, "save bytes", "Stored under project_image/<random>.<ext> on disk (development) or S3."],
+      [2, 4, "INSERT media", "A media row that nothing points to yet. If the form is never saved, cleanup deletes it after 24 h."],
+      [2, 0, "{id, url, …}", "The gallery shows the new image."],
+      [0, 2, "PUT /admin/projects/{id}", "Step 2: the form is saved with media_ids, cover_id and every other field."],
+      [2, 2, "validate + rules", "ProjectIn: 3 languages, lengths, URLs, months not in the future. ProjectService: private ⇔ no links and no media; at most 10 images and 2 videos; the slug is free; a company only for a company client. MediaService checks each file id exists, fits this field and isn't used elsewhere."],
+      [2, 4, "UPDATE + replace links → COMMIT", "repositories/links.py replaces project_media / project_types / project_techs with the new sets; position keeps the order. One transaction."],
+      [2, 3, "delete removed files", "Files that were in the gallery before and aren't now are deleted from storage and the media table."],
+      [2, 0, "ProjectOut", "The panel shows \"Saved\". The public site shows the change on its next request."],
+    ],
+  },
+  {
+    id: "translate", title: "The Translate button",
+    lanes: ["Browser", "Admin panel", "Backend", "Claude API"],
+    steps: [
+      [0, 0, "type English, press Translate", "I18nField asks first if Russian or Tajik already have text (they'll be replaced)."],
+      [0, 2, "POST /admin/translate {text, format}", "Through the panel's rewrite, with the CSRF header like any write."],
+      [2, 2, "no key? → 503", "Without ANTHROPIC_API_KEY, TranslationService answers 503 with how to enable it; the tabs still work by hand."],
+      [2, 3, "translate (claude-opus-5-5)", "repositories/translation.py: low effort, JSON output with ru and tg."],
+      [3, 2, "{ru, tg}", "The answer is cleaned the same way as typed text (rich text through the HTML allow-list). An incomplete answer → 503 \"try again\"."],
+      [2, 0, "fill the RU and TG tabs", "Nothing is saved yet: you review, edit, then press Save."],
+    ],
+  },
+  {
+    id: "contact", title: "A visitor sends the contact form",
+    lanes: ["Browser", "Public site", "Backend", "PostgreSQL", "Admin panel"],
+    steps: [
+      [0, 1, "Server Action sendContactMessage", "ContactForm calls src/api/contact.actions.ts on the Next.js server; the browser never calls the backend."],
+      [1, 2, "POST /api/v1/public/contact + X-Forwarded-For", "The visitor's IP is passed on so the per-visitor limit works. The backend trusts X-Forwarded-For only from TRUSTED_PROXIES."],
+      [2, 2, "validate · honeypot", "Name, a valid email or WhatsApp number, message ≤ 2000 characters. If the hidden \"website\" field is filled, it's a bot: the answer says OK and nothing is saved."],
+      [2, 3, "count messages (1 h)", "More than 5 from this IP hash or 30 in total → 429; the form says \"try later\"."],
+      [2, 3, "INSERT contact_messages", "Saved with the salted IP hash, never the raw IP."],
+      [2, 0, "\"sent\"", "The Server Action returns sent / invalid / rate-limited / error."],
+      [4, 2, "GET /admin/messages", "Later, the admin Contacts page lists the messages; each can be deleted."],
+    ],
+  },
+  {
+    id: "delete", title: "Deleting a company that is still used",
+    lanes: ["Browser", "Backend", "PostgreSQL"],
+    steps: [
+      [0, 1, "DELETE /admin/selectors/companies/{id}", "From the Selectors page."],
+      [1, 2, "count references", "SelectorService asks how many experiences, projects and testimonials point to it."],
+      [1, 0, "409 {code: in_use, usage}", "The panel explains what uses it (\"2 experiences, 1 project…\")."],
+      [1, 2, "(if nothing uses it) DELETE", "Only then is the row deleted, and its logo file with it. The database's ON DELETE RESTRICT would block it anyway: two layers of safety."],
+    ],
+  },
+];

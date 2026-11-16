@@ -1,6 +1,6 @@
 import "server-only";
 import type { Locale } from "@/i18n/routing";
-import type { ExperienceFilterOptions, ExperiencePage, ExperienceQuery, ExperienceSummary } from "@/types/content";
+import type { ExperienceFilterOptions, ExperiencePage, ExperienceQuery } from "@/types/content";
 import { apiGet } from "./client";
 import { endpoints } from "./endpoints";
 
@@ -22,6 +22,3 @@ export const getExperiencePage = (locale: Locale, q: ExperienceQuery) =>
 /** Companies, technologies, fields and date bounds that the filters can offer. */
 export const getExperienceFilterOptions = (locale: Locale) =>
   apiGet<ExperienceFilterOptions>(endpoints.experienceFilters, { lang: locale });
-
-/** Number of roles and total time worked (hero card). */
-export const getExperienceSummary = () => apiGet<ExperienceSummary>(endpoints.experienceSummary);

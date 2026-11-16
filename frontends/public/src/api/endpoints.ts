@@ -4,7 +4,6 @@ export const endpoints = {
   skills: "/public/skills",
   experience: "/public/experience",
   experienceFilters: "/public/experience/filters",
-  experienceSummary: "/public/experience/summary",
   testimonials: "/public/testimonials",
   testimonialFilters: "/public/testimonials/filters",
   projects: "/public/projects",

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Portfolio architecture</title>
+    <meta name="description" content="How the portfolio's public site, admin panel, backend and database fit together." />
+    <link rel="stylesheet" href="styles.css" />
+    <script>
+      // Pick the saved theme (or the system's) before anything paints.
+      try {
+        const saved = localStorage.getItem("arch-theme");
+        document.documentElement.dataset.theme =
+          saved || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#overview" aria-label="Portfolio architecture, start">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-text"><strong>Portfolio architecture</strong><small>the whole system, visually</small></span>
+      </a>
+      <nav class="tabs" aria-label="Views">
+        <a href="#overview" data-view="overview"><b>1</b> System</a>
+        <a href="#backend" data-view="backend"><b>2</b> Backend</a>
+        <a href="#frontends" data-view="frontends"><b>3</b> Frontends</a>
+        <a href="#database" data-view="database"><b>4</b> Database</a>
+        <a href="#flows" data-view="flows"><b>5</b> Flows</a>
+      </nav>
+      <div class="tools">
+        <div class="search">
+          <input id="search" type="search" placeholder="Search tables, files, pages…" autocomplete="off" aria-label="Search" />
+          <div id="search-results" class="search-results" role="listbox" hidden></div>
+        </div>
+        <button id="theme" class="icon-btn" type="button" aria-label="Switch light / dark">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z" /></svg>
+        </button>
+      </div>
+    </header>
+
+    <main id="view" tabindex="-1"></main>
+
+    <aside id="detail" class="detail" aria-live="polite" hidden>
+      <div class="detail-head">
+        <div>
+          <div id="detail-kicker" class="kicker"></div>
+          <h2 id="detail-title"></h2>
+        </div>
+        <button id="detail-close" class="icon-btn" type="button" aria-label="Close details">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      </div>
+      <div id="detail-body" class="detail-body"></div>
+    </aside>
+
+    <footer class="footer">
+      Checked against the code on <span id="checked-on"></span>. Facts live in <code>data/*.js</code>; the database part is
+      generated from the models (<code>backend/scripts/export_architecture_db.py</code>).
+    </footer>
+
+    <script src="data/system.js"></script>
+    <script src="data/backend.js"></script>
+    <script src="data/frontends.js"></script>
+    <script src="data/db-schema.generated.js"></script>
+    <script src="data/database.js"></script>
+    <script src="data/flows.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

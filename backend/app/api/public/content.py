@@ -71,11 +71,6 @@ async def experience_filters(service: Service, lang: Lang = "en") -> s.Experienc
     return await service.experience_filters(lang)
 
 
-@router.get("/experience/summary", response_model=s.ExperienceSummary)
-async def experience_summary(service: Service) -> s.ExperienceSummary:
-    return await service.experience_summary()
-
-
 @router.get("/projects", response_model=s.ProjectsPage)
 async def projects(service: Service, q: Paging, lang: Lang = "en") -> s.ProjectsPage:
     return await service.projects_page(lang, q)
