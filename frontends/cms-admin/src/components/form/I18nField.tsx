@@ -2,21 +2,25 @@
 
 import { useId, useState } from "react";
 import { Controller, get, useFormContext, useWatch } from "react-hook-form";
-import { LuCheck, LuLanguages } from "react-icons/lu";
+import { LuCheck, LuExternalLink, LuLanguages } from "react-icons/lu";
 import { api } from "@/api/client";
 import { errorMessage } from "@/api/errors";
 import { Spinner } from "@/components/ui/Spinner";
 import { useToast } from "@/components/ui/Toast";
+import { GOOGLE_TRANSLATE_MAX, googleTranslateUrl, htmlToPlainText } from "@/lib/google-translate";
 import { LANG_LABELS, LANG_NAMES, LANGS, visibleLength, type I18nText, type Lang } from "@/lib/i18n";
+import { usePanelSettings } from "@/lib/panel-settings";
 import { inputClass } from "./Field";
 import { RichTextEditor } from "./RichTextEditor";
 
 type Kind = "text" | "multiline" | "rich";
+const TARGETS = ["ru", "tg"] as const;
 
 /**
  * One text in the site's three languages: EN / RU / TG tabs over a single input.
- * A tab shows a check when filled and a red dot when it has an error. "Translate" fills RU and TG
- * from the English text (Claude API on the backend); you review them before saving.
+ * A tab shows a check when filled and a red dot when it has an error. The helper next to the tabs follows
+ * the translator chosen in Settings: Claude's "Translate" fills RU and TG for you to review; the Google
+ * buttons open Google Translate with the English text in a new tab; Manual shows no helper.
  */
 export function I18nField({
   name,
@@ -41,6 +45,7 @@ export function I18nField({
 }) {
   const id = useId();
   const toast = useToast();
+  const { translator } = usePanelSettings();
   const { register, control, setValue, getValues, formState } = useFormContext();
   const value = (useWatch({ control, name }) ?? { en: "", ru: "", tg: "" }) as I18nText;
   const [lang, setLang] = useState<Lang>("en");
@@ -82,6 +87,29 @@ export function I18nField({
     }
   }
 
+  /** Opens Google Translate's website in a new tab (no key, no cost); the translation is pasted back by hand. */
+  function openGoogleTranslate(target: (typeof TARGETS)[number]) {
+    const english = (getValues(`${name}.en`) as string) ?? "";
+    const text = rich ? htmlToPlainText(english) : english.trim();
+    if (!text) {
+      toast("Write the English text first.", "error");
+      setLang("en");
+      return;
+    }
+    setLang(target);
+    if (text.length <= GOOGLE_TRANSLATE_MAX) {
+      window.open(googleTranslateUrl(target, text), "_blank", "noopener,noreferrer");
+      toast(`Google Translate opened in a new tab. Paste the ${LANG_NAMES[target]} text into the ${LANG_LABELS[target]} tab.`);
+      return;
+    }
+    // Longer than the website takes in one go: open it empty and hand the text over by the clipboard.
+    window.open(googleTranslateUrl(target), "_blank", "noopener,noreferrer");
+    navigator.clipboard.writeText(text).then(
+      () => toast(`The English text is longer than ${GOOGLE_TRANSLATE_MAX} characters: it's copied, paste it into Google Translate in parts.`),
+      () => toast(`The English text is longer than ${GOOGLE_TRANSLATE_MAX} characters: copy it into Google Translate in parts.`, "error"),
+    );
+  }
+
   return (
     <div>
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
@@ -115,7 +143,7 @@ export function I18nField({
               );
             })}
           </div>
-          {translatable && (
+          {translatable && translator === "claude" && (
             <button
               type="button"
               onClick={translate}
@@ -126,6 +154,25 @@ export function I18nField({
               {translating ? <Spinner className="size-3.5" /> : <LuLanguages className="size-3.5" />}
               Translate
             </button>
+          )}
+          {translatable && translator === "google_web" && (
+            <div role="group" aria-label="Google Translate" className="flex h-8 items-center gap-0.5 rounded-full border border-line pl-3 pr-1 text-xs text-muted">
+              <LuLanguages className="mr-1 size-3.5" aria-hidden />
+              <span className="mr-0.5">Google</span>
+              {TARGETS.map((target) => (
+                <button
+                  key={target}
+                  type="button"
+                  onClick={() => openGoogleTranslate(target)}
+                  title={`Open Google Translate: English → ${LANG_NAMES[target]} (new tab)`}
+                  aria-label={`Google Translate to ${LANG_NAMES[target]}`}
+                  className="flex h-6 items-center gap-1 rounded-full px-2 text-[11px] font-semibold tracking-wide transition-colors duration-200 hover:bg-accent/10 hover:text-accent"
+                >
+                  {LANG_LABELS[target]}
+                  <LuExternalLink className="size-3" aria-hidden />
+                </button>
+              ))}
+            </div>
           )}
         </div>
       </div>

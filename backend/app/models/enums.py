@@ -43,6 +43,14 @@ class MediaPurpose(StrEnum):
     POSTER = "poster"
 
 
+class Translator(StrEnum):
+    """What helps fill Russian and Tajik from English in the admin panel (Settings page)."""
+
+    CLAUDE = "claude"  # the Translate button fills both tabs (Claude API; needs ANTHROPIC_API_KEY)
+    GOOGLE_WEB = "google_web"  # buttons open translate.google.com with the English text; you paste back
+    MANUAL = "manual"  # no helper: type Russian and Tajik yourself
+
+
 def sql_in(enum: type[StrEnum], column: str) -> str:
     """CHECK constraint text: `column IN ('a', 'b', …)`."""
     values = ", ".join(f"'{member.value}'" for member in enum)

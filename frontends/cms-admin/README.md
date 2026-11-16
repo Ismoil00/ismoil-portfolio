@@ -1,7 +1,7 @@
 # Admin panel
 
 Next.js 16 app for editing the portfolio: Hero, About, Contacts (with Other links and messages), Tech stack,
-Experience, Projects, Testimonials, Certificates and the Selectors lists. It stores nothing itself: every change goes
+Experience, Projects, Testimonials, Certificates, the Selectors lists, and its own Settings. It stores nothing itself: every change goes
 to the backend. Plan and decisions: [`docs/PLAN.md`](../../docs/PLAN.md).
 
 Commands below run in PowerShell from the `frontends/cms-admin/` folder.
@@ -48,6 +48,7 @@ Commands below run in PowerShell from the `frontends/cms-admin/` folder.
 | `/hero`, `/about`, `/contacts`, `/tech-stack` | One section each (`/` opens `/hero`) |
 | `/experience`, `/projects`, `/testimonials`, `/certificates` | A list, plus `/new` and `/[id]` editors |
 | `/selectors` | The reusable lists: development fields, instruments, technologies, positions, companies, institutes, product types, link platforms |
+| `/settings` | The panel itself (bottom of the sidebar): the translator next to every EN / RU / TG field (Google Translate · Manual · Claude once its key is set) and changing the password |
 
 ## Folders
 

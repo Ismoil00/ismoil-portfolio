@@ -9,19 +9,19 @@ Progress is tracked in [`PROGRESS.md`](../PROGRESS.md) — read it first when re
 
 | # | Topic | Decision |
 |---|---|---|
-| 1 | Translations | Every visitor-facing text field has **EN / RU / TG tabs**. A **Translate** button fills RU and TG from English with the Claude API (key in `backend/.env`); you check and edit before saving. Without a key the tabs still work by hand. Brand names (companies, technologies, platforms), URLs and emails have one value. |
+| 1 | Translations | Every visitor-facing text field has **EN / RU / TG tabs**. The helper next to the tabs is the translator chosen on the admin's **Settings** page: **Google Translate** (free: RU / TG buttons open translate.google.com with the English text in a new tab; you paste the result back; the app never calls Google), **Manual** (the default: you type them), or **Claude** (paid by usage: a Translate button fills RU and TG with the Claude API for you to check; can only be chosen once `ANTHROPIC_API_KEY` is in `backend/.env`). Brand names (companies, technologies, platforms), URLs and emails have one value. |
 | 2 | Companies | One **Companies** selector (name, website, logo) used by experience, projects and testimonials. |
 | 3 | Development fields | One **Development fields** selector used by: the /experience filter, the /certificates filter ("field of study"), and the tech-stack filters (together with **Instruments**). |
 | 4 | Hero stats | The counts come from the server, computed from the content: months of experience (overlapping jobs merged), roles, projects, certificates, technologies. "Projects" stat = all projects, label "projects shipped to production". The site turns months into whole years, with "+" when there are extra months. |
 | 5 | Read endpoints | **Separate** `/public/*` and `/admin/*` reads. Public: one language, only what is shown, computed fields, no internal data. Admin: all languages, raw values, private data (contact messages). One shared GET would leak private data and make the public site download 3 languages. |
-| 6 | Auth | One admin user, created from the command line. Opaque random session token (no JWT) in an `HttpOnly; Secure; SameSite=Strict` cookie named `__Host-session` (in development over http: `session`, without `Secure`), stored hashed in the DB, 12 h idle / 7 days max, revocable on logout. Argon2id password hashes. CSRF: token cookie + `X-CSRF-Token` header on every write, plus an `Origin` check. Failed logins are limited to 5 per IP and 20 in total per 15 min (forwarded IPs can be faked, the total can't). |
+| 6 | Auth | One admin user, created from the command line. Opaque random session token (no JWT) in an `HttpOnly; Secure; SameSite=Strict` cookie named `__Host-session` (in development over http: `session`, without `Secure`), stored hashed in the DB, 12 h idle / 7 days max, revocable on logout. Argon2id password hashes. CSRF: token cookie + `X-CSRF-Token` header on every write, plus an `Origin` check. Failed logins are limited to 5 per IP and 20 in total per 15 min (forwarded IPs can be faked, the total can't). The password can be changed on the Settings page: the current one is required (wrong guesses count towards the same limits) and every other browser is signed out. |
 | 7 | Admin ↔ backend | The admin app forwards `/api/*` and `/media/*` to the backend (Next.js rewrites): the browser sees one origin, the cookie is first-party, no CORS needed. Server components call the backend directly and pass the cookie along. The public site reads on the server and sends the contact form through a Server Action. CORS still has an explicit allow-list. |
 | 8 | File storage | The "free S3 alternative" is **MinIO**. Note: since late 2025 MinIO no longer publishes free builds and its community edition is in maintenance mode. The backend uses the plain S3 API, so any S3-compatible server works (MinIO, RustFS, SeaweedFS, Garage, Cloudflare R2, AWS S3). In development (no Docker yet) files go to `backend/storage/` on disk; the server is chosen at the Docker step. |
 | 9 | Icons | Selector icons are single-color SVGs: picked from a built-in icon library (Simple Icons brand logos + Lucide) or uploaded as `.svg`. The backend sanitizes and stores them; the sites draw them through a CSS mask, so they're always transparent and take any color (brand color, accent, theme). Company and institute logos are uploaded images (SVG / PNG / WebP / JPEG, ≤ 1 MB) shown as-is. |
 | 10 | Rich text | The experience job description uses a TipTap editor (bold, italic, underline, strike, bullet and numbered lists, links). It's saved as HTML, cleaned by the backend with an allow-list (`nh3`); the 5000-character limit counts visible text. |
 | 11 | Plain text | The project description and hero description are plain textareas: a blank line starts a new paragraph, `**text**` is emphasized (as now). |
 | 12 | Location | City (EN/RU/TG) + country (ISO code from a list; names translated by the browser's `Intl`) + time zone (IANA list, shown as "GMT+5", follows daylight saving). |
-| 13 | Media | Two-step upload: the file is uploaded first (progress bar) and gets an id; saving the form links the ids. `python -m app.cli cleanup` deletes uploads that nothing uses 24 h after upload (not automatic yet: run it on a schedule once deployed). Video posters are captured in the browser (no ffmpeg). Files are checked by content (magic bytes); images are opened with Pillow (size read, metadata stripped). |
+| 13 | Media | Two-step upload: the file is uploaded first (progress bar) and gets an id; saving the form links the ids. `python -m app.cli cleanup` deletes uploads that nothing uses 24 h after upload (not automatic yet: run it on a schedule once deployed). Video posters are captured in the browser (no ffmpeg). Files are checked by content (magic bytes); images are opened with Pillow (size read, metadata stripped). A file keeps the name it was uploaded with: the résumé downloads under exactly that name (RFC 6266 header; stored with the file on S3). |
 | 14 | Projects | Also need a **title** (EN/RU/TG) and a **slug** (URL, made from the English title, editable): a project can't be shown without them. Cover = one of the gallery images (default: first). Client = Self-initiated project · Private client · a company. |
 | 15 | Private projects | Private (NDA) ⇔ no live link and no source link. Private projects take no media. The checkbox and the links lock each other, as described. |
 | 16 | Present job | Only one experience can be "present" (DB unique index + check in the service). |
@@ -38,6 +38,7 @@ Months are stored as dates on the 1st (`2024-03-01`) and exchanged as `"YYYY-MM"
 - `admin_users`: email (unique), password_hash, created_at, last_login_at
 - `admin_sessions`: user_id, token_hash (unique), csrf_hash, created_at, last_seen_at, expires_at, ip_hash, user_agent
 - `login_attempts`: ip_hash, succeeded, created_at
+- `admin_settings` (single row): translator (`google_web` | `manual` | `claude`; default `manual`)
 
 **Files**
 - `media`: purpose (`resume` | `project_image` | `project_video` | `testimonial_image` | `testimonial_video` | `certificate_image` | `logo` | `poster`; decides the allowed types and size), storage_key (unique), content_type, size_bytes, width?, height?, poster_id?, original_name, created_at. No "linked" flag: a file is linked while a row points to it.
@@ -114,6 +115,8 @@ Deleting a selector item or a project/testimonial that something still uses retu
 | Contacts | email, Telegram, WhatsApp, LinkedIn | at least 2 |
 | | other links | any number: platform (selector) + URL |
 | | messages | table: name, contact, message, date + delete |
+| Settings | translator | Google Translate · Manual · Claude (only with `ANTHROPIC_API_KEY`) |
+| | password | current required; new ≥ 12 characters, different from the current one, typed twice |
 
 Every URL: `http(s)` only, ≤ 2048. Dates can't be in the future; "to" can't be before "from".
 
@@ -134,6 +137,7 @@ Every URL: `http(s)` only, ≤ 2048. Dates can't be in the future; "to" can't be
 - `/admin/selectors/{development-fields|instruments|tech-stacks|positions|companies|institutes|product-types|link-platforms}`
   and `/admin/other-links`: list, create (`GET|POST /`), reorder (`PUT /order`), update, delete (`PUT|DELETE /{id}`)
 - `GET /admin/messages` · `DELETE /admin/messages/{id}`
+- `GET|PUT /admin/settings` (translator) · `PUT /admin/settings/password`
 - `POST /admin/media` (upload) · `DELETE /admin/media/{id}` (only a file nothing uses yet)
 - `POST /admin/translate`
 

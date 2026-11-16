@@ -54,21 +54,6 @@ test.describe("Admin edits reach the public site", () => {
     await expect(page.getByText("Actively seeking new career opportunities")).toBeVisible();
   });
 
-  test("Translate explains that it isn't set up (no paid API call in tests)", async ({ page }) => {
-    await page.goto(admin("/about"));
-    // Russian and Tajik are already filled, so it first asks before replacing them.
-    let question = "";
-    page.once("dialog", async (dialog) => {
-      question = dialog.message();
-      await dialog.accept();
-    });
-    await page.getByRole("button", { name: "Translate" }).first().click();
-    await expect(page.getByText(/Translation isn't set up yet/)).toBeVisible();
-    expect(question).toBe("Replace the current Russian and Tajik texts with new translations?");
-    // Nothing was changed: the form has no unsaved edits.
-    await expect(page.getByText("Everything is saved.")).toBeVisible();
-  });
-
   test("the admin lists flag data that is still missing", async ({ page }) => {
     await page.goto(admin("/projects"));
     // The seeded projects have no monthly traffic yet (never invented).

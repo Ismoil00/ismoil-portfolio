@@ -62,10 +62,10 @@ window.ARCH.system = {
     {
       id: "db", x: 975, y: 90, w: 200, h: 96, kind: "db",
       title: "PostgreSQL 18", sub: "portfolio · schema work",
-      what: "34 tables: 33 from the models + Alembic's version table. No functions, triggers or views: the rules live in the backend, the database guards them with keys and CHECKs.",
+      what: "35 tables: 34 from the models + Alembic's version table. No functions, triggers or views: the rules live in the backend, the database guards them with keys and CHECKs.",
       does: [
         "Foreign keys: owner deleted → its links go (CASCADE); a used item can't be deleted (RESTRICT).",
-        "13 CHECK rules (e.g. a private project has no links) and 12 unique rules.",
+        "15 CHECK rules (e.g. a private project has no links) and 12 unique rules.",
         "Texts in 3 languages are JSONB {\"en\",\"ru\",\"tg\"}.",
       ],
       jump: "database",
@@ -76,13 +76,13 @@ window.ARCH.system = {
       what: "The bytes of uploaded files. The media table describes them; storage keeps them under <purpose>/<random name>.",
       does: [
         "Development: files on disk in backend/storage (git-ignored), served by the backend at /media/{key}.",
-        "Production: any S3-compatible server (MinIO, RustFS, R2, AWS S3…), which serves the files itself.",
+        "Production: any S3-compatible server (MinIO, RustFS, R2, AWS S3…), which serves the files itself; the résumé's download name is stored with it.",
       ],
     },
     {
       id: "claude", x: 975, y: 510, w: 200, h: 86, kind: "external",
       title: "Claude API", sub: "Translate button only",
-      what: "Used by one button: Translate fills Russian and Tajik from English for you to review. Works only when ANTHROPIC_API_KEY is set.",
+      what: "Used by one button: Translate fills Russian and Tajik from English for you to review. Optional and paid: it can only be chosen in Settings once ANTHROPIC_API_KEY is set. The free alternatives (Google Translate's website in a new tab, or typing by hand) never reach the backend.",
       does: [
         "Model claude-opus-5-5, low effort, JSON output.",
         "The answer is cleaned like anything typed into the panel, and nothing is saved until you press Save.",

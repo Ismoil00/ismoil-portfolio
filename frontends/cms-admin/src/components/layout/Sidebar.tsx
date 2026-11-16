@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LuExternalLink, LuLogOut, LuMenu, LuX } from "react-icons/lu";
+import { LuExternalLink, LuLogOut, LuMenu, LuSettings, LuX } from "react-icons/lu";
 import { api } from "@/api/client";
 import { lockScroll } from "@/lib/scroll-lock";
 import { ThemeToggle } from "./ThemeToggle";
@@ -61,8 +61,19 @@ export function Sidebar({ email }: { email: string }) {
     </nav>
   );
 
+  const settingsActive = pathname === "/settings";
   const footer = (
     <div className="border-t border-line p-3">
+      <Link
+        href="/settings"
+        aria-current={settingsActive ? "page" : undefined}
+        onClick={() => setOpen(false)}
+        className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors duration-200 ${
+          settingsActive ? "bg-accent/12 font-medium text-accent" : "text-muted hover:bg-tint/5 hover:text-fg"
+        }`}
+      >
+        <LuSettings className={`size-4.5 transition-transform duration-300 ${settingsActive ? "" : "group-hover:rotate-45"}`} /> Settings
+      </Link>
       <a
         href={siteUrl}
         target="_blank"

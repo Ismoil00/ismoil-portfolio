@@ -45,9 +45,11 @@ and screenshots in `test-results/`, the report in `playwright-report/` (all git-
 |---|---|
 | `auth.setup.ts` | Signs in once through the login page; other tests reuse the session |
 | `admin-auth.spec.ts` | Redirect to login when signed out, wrong password, sign in → requested page, reload, sign out |
-| `content-to-site.spec.ts` | About title and Hero status edited in the admin show on the site (right language only); Translate without a key; "Missing …" badges |
+| `content-to-site.spec.ts` | About title and Hero status edited in the admin show on the site (right language only); "Missing …" badges |
+| `settings.spec.ts` | Translator: Manual by default (no helper), Claude can't be picked without a key, Google Translate opens the website with the English text (Google itself is stubbed, never called) |
 | `contact.spec.ts` | Form validation, sending, the message in the admin table, deleting it |
 | `listings.spec.ts` | Filters (kept in the URL), "Show more" |
 | `languages-themes.spec.ts` | Every page in EN/RU/TG without errors, language switcher, light/dark on both apps |
 | `empty-sections.spec.ts` | Testimonials hidden while there are none (section, menu, page 404, sitemap), no traffic row, NDA note |
 | `mobile.spec.ts` | Phone screen: no sideways scrolling, menu navigation |
+| `account.spec.ts` | Runs last (own project): password change in Settings: mismatch caught, other browsers signed out, old password refused, new one works; then changed back |

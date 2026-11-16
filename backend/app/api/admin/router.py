@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends
 
-from app.api.admin import content, media, sections, selectors, translate
+from app.api.admin import content, media, sections, selectors, settings, translate
 from app.api.auth_deps import current_admin
 
 admin_router = APIRouter(prefix="/admin", dependencies=[Depends(current_admin)])
@@ -11,3 +11,4 @@ admin_router.include_router(selectors.router)
 admin_router.include_router(sections.router)
 admin_router.include_router(content.router)
 admin_router.include_router(translate.router)
+admin_router.include_router(settings.router)

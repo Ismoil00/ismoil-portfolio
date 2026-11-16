@@ -212,3 +212,12 @@ export interface Certificate {
   images: Media[];
   updated_at: string;
 }
+
+/** What helps fill Russian and Tajik from English (Settings page). */
+export type Translator = "claude" | "google_web" | "manual";
+
+export interface PanelSettings {
+  translator: Translator;
+  /** ANTHROPIC_API_KEY is set on the backend, so Claude can be chosen. */
+  claude_ready: boolean;
+}

@@ -30,6 +30,10 @@ export interface RadioCardOption<T extends string> {
   description?: string;
   /** A small colored dot (e.g. the job-search status color). */
   dot?: string;
+  /** A short tag after the label ("Free", "Not set up"). */
+  badge?: string;
+  /** Shown but can't be picked (the description says why). */
+  disabled?: boolean;
 }
 
 /** Big clickable choices in a row (one can be picked). */
@@ -51,8 +55,12 @@ export function RadioCards<T extends string>({
         return (
           <label
             key={option.value}
-            className={`relative flex cursor-pointer flex-col gap-1 rounded-xl border p-4 transition-[border-color,background-color,box-shadow] duration-200 ${
-              checked ? "border-accent/70 bg-accent/[0.06] shadow-[0_0_0_3px_rgb(var(--spot-rim)/0.12)]" : "border-line hover:border-line-strong"
+            className={`relative flex flex-col gap-1 rounded-xl border p-4 transition-[border-color,background-color,box-shadow] duration-200 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent ${
+              option.disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+            } ${
+              checked
+                ? "border-accent/70 bg-accent/[0.06] shadow-[0_0_0_3px_rgb(var(--spot-rim)/0.12)]"
+                : `border-line ${option.disabled ? "" : "hover:border-line-strong"}`
             }`}
           >
             <input
@@ -60,12 +68,18 @@ export function RadioCards<T extends string>({
               name={name}
               value={option.value}
               checked={checked}
+              disabled={option.disabled}
               onChange={() => onChange(option.value)}
               className="sr-only"
             />
-            <span className="flex items-center gap-2 text-sm font-medium">
+            <span className="flex items-center gap-2 pr-6 text-sm font-medium">
               {option.dot && <span className="size-2.5 rounded-full" style={{ background: option.dot, boxShadow: `0 0 10px ${option.dot}` }} />}
               {option.label}
+              {option.badge && (
+                <span className="rounded-full border border-line px-2 py-px text-[10px] font-semibold uppercase tracking-wide text-subtle">
+                  {option.badge}
+                </span>
+              )}
             </span>
             {option.description && <span className="text-xs text-subtle">{option.description}</span>}
             {checked && <LuCheck className="absolute right-3 top-3 size-4 text-accent" />}

@@ -37,6 +37,7 @@ class AuthRepositoryProtocol(Protocol):
     async def get_session(self, token_hash: str) -> AdminSession | None: ...
     async def delete_session(self, session: AdminSession) -> None: ...
     async def delete_user_sessions(self, user_id) -> None: ...
+    async def delete_other_sessions(self, user_id, keep_id) -> None: ...
     async def add_attempt(self, ip_hash: str, succeeded: bool, at: datetime) -> None: ...
     async def failures_since(self, ip_hash: str, since: datetime) -> list[datetime]: ...
     async def failures_since_any(self, since: datetime) -> list[datetime]: ...
@@ -83,10 +84,10 @@ class AuthService:
         await self.repo.commit()
         return user
 
-    async def login(self, email: str, password: str, *, ip_hash: str, user_agent: str) -> LoginResult:
-        now = self.clock()
+    async def _check_throttle(self, ip_hash: str, now: datetime) -> None:
+        """Wrong passwords (sign-in or password change) are limited per visitor and for everyone together:
+        forwarded IPs can be faked, the total can't."""
         window = timedelta(minutes=self.settings.login_window_minutes)
-        # Per visitor, and for everyone together: forwarded IPs can be faked, the total can't.
         wait = retry_after(
             await self.repo.failures_since(ip_hash, now - window), self.settings.login_max_failures, window, now
         ) or retry_after(
@@ -94,6 +95,10 @@ class AuthService:
         )
         if wait is not None:
             raise TooManyRequests("Too many failed attempts. Try again later.", retry_after=wait)
+
+    async def login(self, email: str, password: str, *, ip_hash: str, user_agent: str) -> LoginResult:
+        now = self.clock()
+        await self._check_throttle(ip_hash, now)
 
         user = await self.repo.get_user_by_email(normalize_email(email))
         password_ok = verify_password(user.password_hash if user else DUMMY_PASSWORD_HASH, password)
@@ -141,6 +146,28 @@ class AuthService:
             session.last_seen_at = now
             await self.repo.commit()
         return session
+
+    async def change_password(self, session: AdminSession, current: str, new: str, *, ip_hash: str) -> None:
+        """A new password for the signed-in admin. The current one is checked first (and wrong guesses count
+        towards the sign-in limits); every other browser is signed out, this one stays signed in."""
+        now = self.clock()
+        await self._check_throttle(ip_hash, now)
+        user = session.user
+        errors: list[tuple[tuple[str, ...], str]] = []
+        if len(new.strip()) < MIN_PASSWORD_LENGTH:
+            errors.append((("new_password",), f"Use at least {MIN_PASSWORD_LENGTH} characters"))
+        elif new == current:
+            errors.append((("new_password",), "Pick a password different from the current one"))
+        if not verify_password(user.password_hash, current):
+            await self.repo.add_attempt(ip_hash, False, now)
+            await self.repo.commit()
+            raise FieldErrors([(("current_password",), "This isn't your current password"), *errors])
+        if errors:
+            raise FieldErrors(errors)
+
+        user.password_hash = hash_password(new)
+        await self.repo.delete_other_sessions(user.id, session.id)
+        await self.repo.commit()
 
     def check_csrf(self, session: AdminSession, csrf_token: str | None) -> None:
         if not csrf_token or not same_hash(csrf_token, session.csrf_hash):

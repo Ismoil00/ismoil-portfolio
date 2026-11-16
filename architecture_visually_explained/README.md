@@ -39,7 +39,8 @@ Then set `CHECKED_ON` at the top of `app.js` to the date you checked.
 
 | File | Holds |
 | --- | --- |
-| `index.html` | The page shell and the script order |
+| `index.html` | The page shell, header icons (one per view) and the script order |
+| `favicon.svg` | The tab icon, also the logo in the header: two apps wired to the backend |
 | `styles.css` | Colors (light and dark), layout, diagram styles |
 | `app.js` | Draws every view from the data; no facts in here |
 | `data/*.js` | The facts. `db-schema.generated.js` is generated; the rest are written by hand |

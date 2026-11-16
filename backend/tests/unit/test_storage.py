@@ -6,6 +6,7 @@ import aioboto3
 import pytest
 from moto.server import ThreadedMotoServer
 
+from app.core.files import content_disposition
 from app.repositories.storage import InvalidKey, LocalStorage, S3Storage
 
 
@@ -65,3 +66,18 @@ async def test_s3_save_url_and_delete(s3, s3_server):
 
     await s3.delete("logo/x.svg")
     assert not await s3.exists("logo/x.svg")
+
+
+async def test_s3_downloads_keep_the_uploaded_name(s3, s3_server):
+    """With S3 the storage server serves files itself, so the download name is stored with the file."""
+    await s3.save(
+        "resume/abc.pdf", io.BytesIO(b"%PDF-1.7"), "application/pdf", download_name="CV - Ru - Sharifov Ismoil.pdf"
+    )
+    await s3.save("project_image/abc.png", io.BytesIO(b"png"), "image/png")
+
+    session = aioboto3.Session(aws_access_key_id="testing", aws_secret_access_key="testing", region_name="us-east-1")
+    async with session.client("s3", endpoint_url=s3_server) as client:
+        pdf = await client.head_object(Bucket="portfolio-test", Key="resume/abc.pdf")
+        image = await client.head_object(Bucket="portfolio-test", Key="project_image/abc.png")
+    assert pdf["ContentDisposition"] == content_disposition("CV - Ru - Sharifov Ismoil.pdf")
+    assert "ContentDisposition" not in image

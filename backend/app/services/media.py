@@ -17,7 +17,7 @@ from typing import BinaryIO
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 from app.core.errors import Conflict, FieldErrors, NotFound, PayloadTooLarge, UnsupportedMediaType
-from app.core.files import EXTENSIONS, SVG, UploadRejected, check_upload
+from app.core.files import ATTACHMENT_TYPES, EXTENSIONS, SVG, UploadRejected, check_upload
 from app.core.svg import InvalidSvg, sanitize_svg
 from app.models import Media
 from app.models.enums import MediaPurpose
@@ -48,10 +48,25 @@ class _Prepared:
     height: int | None
 
 
+MAX_NAME = 255  # media.original_name
+_CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]")
+_SAME_EXTENSION = {"jpg": {"jpg", "jpeg"}}
+
+
 def download_name(filename: str, extension: str) -> str:
-    """A safe file name for downloads ("My CV (2026).pdf" -> "My-CV-2026.pdf")."""
-    stem = re.sub(r"[^A-Za-z0-9._-]+", "-", filename.rsplit(".", 1)[0]).strip("-._")[:80]
-    return f"{stem or 'file'}.{extension}"
+    """The name the file had on the uploader's computer, kept as it is ("CV - Ru - Sharifov Ismoil.pdf").
+
+    Only a folder path and invisible control characters are dropped, and the real extension is added when the
+    name lacks it. The download header encodes everything else safely (core.files.content_disposition).
+    """
+    name = _CONTROL_CHARS.sub("", re.split(r"[\\/]", filename or "")[-1]).strip()
+    stem, dot, ext = name.rpartition(".")
+    if not (dot and stem and ext.lower() in _SAME_EXTENSION.get(extension, {extension})):
+        name = f"{name or 'file'}.{extension}"
+    if len(name) > MAX_NAME:
+        stem, _, ext = name.rpartition(".")
+        name = f"{stem[: MAX_NAME - len(ext) - 1]}.{ext}"
+    return name
 
 
 def _inspect_image(data: BinaryIO, content_type: str) -> tuple[int, int, BinaryIO | None]:
@@ -116,7 +131,9 @@ class MediaService:
     async def _store(self, purpose: MediaPurpose, upload: IncomingFile, prepared: _Prepared, **extra) -> Media:
         extension = EXTENSIONS[prepared.content_type]
         key = f"{purpose.value}/{uuid.uuid4().hex}.{extension}"
-        await self.storage.save(key, prepared.data, prepared.content_type)
+        name = download_name(upload.filename, extension)
+        attachment = prepared.content_type in ATTACHMENT_TYPES
+        await self.storage.save(key, prepared.data, prepared.content_type, download_name=name if attachment else None)
         media = Media(
             purpose=purpose.value,
             storage_key=key,
@@ -124,7 +141,7 @@ class MediaService:
             size_bytes=prepared.size,
             width=prepared.width,
             height=prepared.height,
-            original_name=download_name(upload.filename, extension),
+            original_name=name,
             **extra,
         )
         await self.repo.add(media)

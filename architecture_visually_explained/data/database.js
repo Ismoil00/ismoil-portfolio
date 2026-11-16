@@ -4,7 +4,7 @@ window.ARCH = window.ARCH || {};
 
 window.ARCH.database = {
   groups: {
-    auth: { label: "Sign-in", color: "--g-auth" },
+    auth: { label: "Admin panel", color: "--g-auth" },
     sections: { label: "Sections", color: "--g-sections" },
     content: { label: "Content", color: "--g-content" },
     links: { label: "Link tables", color: "--g-links" },
@@ -15,7 +15,7 @@ window.ARCH.database = {
 
   // Zones drawn behind the map (their size comes from the tables in them).
   zones: [
-    { label: "Sign-in", group: "auth", tables: ["admin_users", "admin_sessions", "login_attempts"] },
+    { label: "Admin panel (sign-in, settings)", group: "auth", tables: ["admin_users", "admin_sessions", "login_attempts", "admin_settings"] },
     { label: "Migrations", group: "system", tables: ["alembic_version"] },
     { label: "Sections (single rows)", group: "sections", tables: ["hero", "about", "contacts", "other_links"] },
     { label: "Content", group: "content", tables: ["experiences", "projects", "testimonials", "certificates", "contact_messages"] },
@@ -26,9 +26,9 @@ window.ARCH.database = {
 
   // Map positions (top-left of each 200 × 48 card) in a 1800 × 1110 canvas.
   layout: {
-    admin_users: [50, 90], admin_sessions: [50, 170], login_attempts: [50, 250],
-    alembic_version: [50, 400],
-    hero: [50, 550], about: [50, 630], contacts: [50, 710], other_links: [50, 790],
+    admin_users: [50, 90], admin_sessions: [50, 170], login_attempts: [50, 250], admin_settings: [50, 330],
+    alembic_version: [50, 470],
+    hero: [50, 610], about: [50, 690], contacts: [50, 770], other_links: [50, 850],
     experiences: [340, 140], projects: [340, 420], testimonials: [340, 660], certificates: [340, 880], contact_messages: [340, 1010],
     experience_techs: [640, 40], experience_fields: [640, 110], experience_projects: [640, 180], experience_testimonials: [640, 250],
     project_types: [640, 370], project_techs: [640, 440], project_media: [640, 510], testimonial_projects: [640, 640],
@@ -42,13 +42,13 @@ window.ARCH.database = {
   tables: {
     admin_users: {
       group: "auth",
-      what: "The one admin account. The email is unique; the password is stored only as an Argon2id hash (rehashed on sign-in when the settings change).",
+      what: "The one admin account. The email is unique; the password is stored only as an Argon2id hash (rehashed on sign-in when the settings change). The password can be changed on /settings or reset from the command line.",
       managedBy: ["services/auth.py · AuthService", "repositories/auth.py", "cli.py create-admin / delete-admin"],
-      shownIn: ["Admin: /login"],
+      shownIn: ["Admin: /login, /settings → Change password"],
     },
     admin_sessions: {
       group: "auth",
-      what: "One row per signed-in browser. Only hashes of the session and CSRF tokens are stored, so a copy of the database can't be used to sign in. Ends after 12 h without use or 7 days in total; signing out deletes it.",
+      what: "One row per signed-in browser. Only hashes of the session and CSRF tokens are stored, so a copy of the database can't be used to sign in. Ends after 12 h without use or 7 days in total; signing out deletes it, and a password change deletes every other browser's row.",
       managedBy: ["services/auth.py · AuthService", "repositories/auth.py", "cli.py cleanup (expired rows)"],
       shownIn: ["Every admin request (cookie → this row)"],
     },
@@ -56,11 +56,17 @@ window.ARCH.database = {
       group: "auth",
       what: "Every sign-in attempt, with a salted hash of the visitor's IP. Counting failures in the last 15 minutes gives the limits: 5 per IP and 20 in total.",
       managedBy: ["services/auth.py · AuthService", "repositories/auth.py", "cli.py cleanup (rows older than 30 days)"],
-      shownIn: ["Admin: /login (429 when over the limit)"],
+      shownIn: ["Admin: /login and the password change on /settings (429 when over the limit)"],
+    },
+    admin_settings: {
+      group: "auth",
+      what: "A single row (id = 1) with the admin panel's own settings. translator decides what helps fill Russian and Tajik from English: claude (the Translate button; only once ANTHROPIC_API_KEY is set), google_web (buttons open Google Translate with the English text) or manual. Until the row exists, manual applies.",
+      managedBy: ["services/settings.py · PanelSettingsService", "repositories/settings.py"],
+      shownIn: ["Admin: /settings", "Every EN / RU / TG field's helper button"],
     },
     alembic_version: {
       group: "system",
-      what: "Alembic's bookmark: the id of the last migration applied to this database (4e6924f14a2d). Not a model; only `alembic upgrade` writes it.",
+      what: "Alembic's bookmark: the id of the last migration applied to this database (ba844e7ce9b0). Not a model; only `alembic upgrade` writes it.",
       managedBy: ["alembic/ (env.py, versions/)"],
       shownIn: ["—"],
     },
@@ -120,7 +126,7 @@ window.ARCH.database = {
     },
     media: {
       group: "files",
-      what: "Describes one uploaded file; the bytes live in storage under storage_key. purpose decides the allowed types and size (résumé PDF ≤ 10 MB, project image ≤ 10 MB, video ≤ 100 MB, certificate image ≤ 2 MB, logo ≤ 1 MB, poster ≤ 2 MB). A video points to its poster image. There is no \"linked\" flag: a file is in use while some row points to it.",
+      what: "Describes one uploaded file; the bytes live in storage under storage_key. purpose decides the allowed types and size (résumé PDF ≤ 10 MB, project image ≤ 10 MB, video ≤ 100 MB, certificate image ≤ 2 MB, logo ≤ 1 MB, poster ≤ 2 MB). A video points to its poster image. original_name keeps the name the file had on your computer (spaces, Cyrillic and all); the résumé downloads under it. There is no \"linked\" flag: a file is in use while some row points to it.",
       managedBy: ["services/media.py · MediaService", "repositories/media.py · storage.py", "cli.py cleanup (unused after 24 h)"],
       shownIn: ["Every upload field in the admin", "Site: images, videos, the résumé download"],
     },
@@ -184,6 +190,8 @@ window.ARCH.database = {
   ],
 
   checks: {
+    ck_admin_settings_single_row: "Only one row can exist (id is always 1).",
+    ck_admin_settings_translator: "The translator is claude, google_web or manual.",
     ck_about_single_row: "Only one row can exist (id is always 1).",
     ck_contacts_single_row: "Only one row can exist (id is always 1).",
     ck_hero_single_row: "Only one row can exist (id is always 1).",
@@ -206,24 +214,24 @@ window.ARCH.database = {
   },
 
   objects: [
-    { name: "Tables", count: 34, text: "33 from the models + alembic_version." },
+    { name: "Tables", count: 35, text: "34 from the models + alembic_version." },
     { name: "Functions", count: 0, text: "Business rules live in the backend's services: one place, tested in Python." },
     { name: "Triggers", count: 0, text: "updated_at is set by SQLAlchemy on every update (onupdate=now()); the database does nothing behind the code's back." },
     { name: "Views", count: 0, text: "The public site's read queries are built in repositories/public.py." },
     { name: "Custom types / enums", count: 0, text: "Fixed lists are VARCHAR + a CHECK rule (values in app/models/enums.py), so adding a value is a small migration." },
-    { name: "Sequences", count: 3, text: "hero_id_seq, about_id_seq, contacts_id_seq for the three single-row tables. Every other table uses a UUID made in Python (uuid4)." },
-    { name: "Indexes", count: 69, text: "34 primary keys, 13 unique (12 constraints + the one-current-job rule), 19 on foreign keys, 3 for time windows: login_attempts (ip_hash, created_at), contact_messages (ip_hash, created_at) and (created_at)." },
+    { name: "Sequences", count: 4, text: "hero_id_seq, about_id_seq, contacts_id_seq, admin_settings_id_seq for the four single-row tables. Every other table uses a UUID made in Python (uuid4)." },
+    { name: "Indexes", count: 70, text: "35 primary keys, 13 unique (12 constraints + the one-current-job rule), 19 on foreign keys, 3 for time windows: login_attempts (ip_hash, created_at), contact_messages (ip_hash, created_at) and (created_at)." },
     { name: "Extensions", count: 1, text: "plpgsql only (built into PostgreSQL)." },
   ],
 
   conventions: [
     ["Schema", "Every table lives in schema work; each connection sets search_path=work."],
-    ["Ids", "UUID v4 made in Python (unguessable). The single-row sections use id = 1."],
+    ["Ids", "UUID v4 made in Python (unguessable). The single-row tables (hero, about, contacts, admin_settings) use id = 1."],
     ["3-language texts", "JSONB {\"en\", \"ru\", \"tg\"}: required fields need all three, optional ones all three or none."],
     ["Months", "Stored as a DATE on the 1st (2024-03-01), exchanged as \"YYYY-MM\"."],
     ["Timestamps", "created_at and updated_at default to now(); updated_at is refreshed by SQLAlchemy."],
     ["Ordered lists", "Every link table has a position, so picked lists keep their order."],
     ["Constraint names", "pk_<table>, fk_<table>_<column>_<target>, uq_<table>_<column>, ck_<table>_<rule>, ix_<table>_<column> (set in app/db/base.py so migrations can find them)."],
-    ["Migrations", "Alembic: f7e7e155e0e8 initial schema → 4e6924f14a2d seeded rows may lack traffic and verify_url (head)."],
+    ["Migrations", "Alembic: f7e7e155e0e8 initial schema → 4e6924f14a2d seeded rows may lack traffic and verify_url → ba844e7ce9b0 admin_settings (head)."],
   ],
 };

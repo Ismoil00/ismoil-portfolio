@@ -266,6 +266,67 @@ window.ARCH.dbSchema = {
    ]
   },
   {
+   "name": "admin_settings",
+   "model": "AdminSettings",
+   "module": "app/models/settings.py",
+   "doc": "How the admin panel helps you: which translator fills Russian and Tajik from English.",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "pk": true,
+     "unique": false,
+     "default": "nextval('admin_settings_id_seq')",
+     "onUpdate": null,
+     "fk": null
+    },
+    {
+     "name": "translator",
+     "type": "VARCHAR(16)",
+     "nullable": false,
+     "pk": false,
+     "unique": false,
+     "default": "manual",
+     "onUpdate": null,
+     "fk": null
+    },
+    {
+     "name": "created_at",
+     "type": "TIMESTAMP WITH TIME ZONE",
+     "nullable": false,
+     "pk": false,
+     "unique": false,
+     "default": "now()",
+     "onUpdate": null,
+     "fk": null
+    },
+    {
+     "name": "updated_at",
+     "type": "TIMESTAMP WITH TIME ZONE",
+     "nullable": false,
+     "pk": false,
+     "unique": false,
+     "default": "now()",
+     "onUpdate": "now()",
+     "fk": null
+    }
+   ],
+   "foreignKeys": [],
+   "checks": [
+    {
+     "name": "ck_admin_settings_single_row",
+     "sql": "id = 1"
+    },
+    {
+     "name": "ck_admin_settings_translator",
+     "sql": "translator IN ('claude', 'google_web', 'manual')"
+    }
+   ],
+   "uniques": [],
+   "indexes": []
+  },
+  {
    "name": "admin_users",
    "model": "AdminUser",
    "module": "app/models/auth.py",

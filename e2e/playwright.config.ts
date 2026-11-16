@@ -58,7 +58,7 @@ export default defineConfig({
     { name: "setup", testMatch: /auth\.setup\.ts/, use: { ...devices["Desktop Edge"], channel: "msedge" } },
     {
       name: "desktop",
-      testIgnore: /mobile\.spec\.ts/,
+      testIgnore: /(mobile|account)\.spec\.ts/,
       use: { ...devices["Desktop Edge"], channel: "msedge" },
       dependencies: ["setup"],
     },
@@ -67,6 +67,13 @@ export default defineConfig({
       testMatch: /mobile\.spec\.ts/,
       use: { ...devices["Pixel 7"], channel: "msedge" },
       dependencies: ["setup"],
+    },
+    {
+      // Last: changing the password signs out the session every other test shares.
+      name: "account",
+      testMatch: /account\.spec\.ts/,
+      use: { ...devices["Desktop Edge"], channel: "msedge" },
+      dependencies: ["desktop", "phone"],
     },
   ],
 });

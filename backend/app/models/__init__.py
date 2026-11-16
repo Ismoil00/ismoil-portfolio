@@ -15,10 +15,12 @@ from app.models.selectors import (
     ProductType,
     TechStack,
 )
+from app.models.settings import AdminSettings
 
 __all__ = [
     "About",
     "AdminSession",
+    "AdminSettings",
     "AdminUser",
     "Certificate",
     "Company",

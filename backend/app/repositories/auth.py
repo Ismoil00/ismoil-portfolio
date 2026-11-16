@@ -31,6 +31,12 @@ class AuthRepository(Repository):
     async def delete_user_sessions(self, user_id: uuid.UUID) -> None:
         await self.session.execute(delete(AdminSession).where(AdminSession.user_id == user_id))
 
+    async def delete_other_sessions(self, user_id: uuid.UUID, keep_id: uuid.UUID) -> None:
+        """Signs out every other browser of this user (after a password change)."""
+        await self.session.execute(
+            delete(AdminSession).where(AdminSession.user_id == user_id, AdminSession.id != keep_id)
+        )
+
     async def add_attempt(self, ip_hash: str, succeeded: bool, at: datetime) -> None:
         self.session.add(LoginAttempt(ip_hash=ip_hash, succeeded=succeeded, created_at=at))
         await self.session.flush()

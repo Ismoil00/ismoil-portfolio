@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 
 from app.api.deps import MediaServiceDep, StorageDep
 from app.core.errors import NotFound
+from app.core.files import ATTACHMENT_TYPES, content_disposition
 from app.repositories.storage import InvalidKey, LocalStorage
 
 router = APIRouter(tags=["files"])
@@ -24,11 +25,7 @@ async def serve_media(key: str, service: MediaServiceDep, storage: StorageDep) -
     media = await service.get_by_key(key)
     if not path.is_file():
         raise NotFound("File not found")
-    is_pdf = media.content_type == "application/pdf"
-    return FileResponse(
-        path,
-        media_type=media.content_type,
-        headers={"Cache-Control": CACHE_FOREVER},
-        filename=media.original_name if is_pdf else None,
-        content_disposition_type="attachment" if is_pdf else "inline",
-    )
+    headers = {"Cache-Control": CACHE_FOREVER}
+    if media.content_type in ATTACHMENT_TYPES:  # the résumé downloads under the name it was uploaded with
+        headers["Content-Disposition"] = content_disposition(media.original_name)
+    return FileResponse(path, media_type=media.content_type, headers=headers)

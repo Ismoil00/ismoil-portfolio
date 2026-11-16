@@ -2,7 +2,7 @@
 
 Plan and decisions: [`docs/PLAN.md`](docs/PLAN.md). Resume from the first unchecked item.
 
-_Last updated: 2026-11-16 (architecture site; unused experience summary endpoint removed) — backend: 307 tests passing + ruff clean; admin and public: tsc + eslint clean; public `next build` passes; E2E: 37 passing_
+_Last updated: 2026-11-16 (architecture site; experience summary endpoint removed; résumé download name fix; admin Settings page) — backend: 346 tests passing + ruff clean; admin and public: tsc + eslint clean; public `next build` passes; E2E: 40 passing_
 
 ## Phases
 
@@ -48,13 +48,22 @@ _Last updated: 2026-11-16 (architecture site; unused experience summary endpoint
 - [x] **14. Architecture site** (2026-11-16) — `architecture_visually_explained/`: plain HTML/CSS/JS, opens from disk (or `architecture` in launch.json, port 3005). Views: system map (clickable boxes/arrows, animated journeys), backend layers + feature matrix + error codes, both frontends (request path, every page → backend calls), database (entity / all-tables map, focus view per table, delete behaviour, CHECK rules, other objects, conventions), step-by-step sequence diagrams, search.
   - Database facts are generated from the models: `backend/scripts/export_architecture_db.py` → `data/db-schema.generated.js`; `tests/unit/test_architecture_db.py` fails when the models change and the file isn't regenerated. Meaning, layout and the other views are hand-written in `data/*.js`.
   - Checked in the browser: every view, clicks, journeys, focus view, search, light/dark, phone width (no sideways scroll), no console errors.
+  - Tab icon (`favicon.svg`, also the header logo) and an icon per view in the header; below 1180 px the view links get their own row, on phones only icons + the current view's name.
   - Found while mapping: `GET /public/experience/summary` and the public site's `getExperienceSummary` were unused (the hero gets the same roles and months from `/public/profile` stats). Removed from both sides (route, service method, schemas, TS type, endpoint key); `test_there_is_no_separate_experience_summary` checks it stays gone.
+
+- [x] **15. Fix: résumé download name** (2026-11-16) — uploads used to rewrite the file name (`CV - Ru - Sharifov Ismoil.pdf` → `CV---Ru---Sharifov-Ismoil.pdf`). Now `download_name()` keeps it as uploaded (drops only a folder path and control characters; adds the real extension if missing), and `core/files.content_disposition()` sends it with an ASCII fallback + the exact UTF-8 name, both when the backend serves the file and on S3 objects. Tests: `tests/unit/test_download_names.py`, media API (exact name, Cyrillic, images stay inline), S3. Files uploaded before the fix keep their stored dashed name until uploaded again.
+
+- [x] **16. Admin Settings page** (2026-11-16) — new menu item at the bottom of the sidebar (`/settings`).
+  - **Translator** for every EN / RU / TG field, saved on click: **Google Translate** (free; RU / TG buttons open translate.google.com with the English text in a new tab, rich text as plain text; over 5,000 characters it opens empty and copies the text; the app never calls Google), **Manual** (default; no helper), **Claude** (paid; only selectable once `ANTHROPIC_API_KEY` is set). Google's official Cloud Translation API was left out on purpose: it needs a billing account with a card.
+  - **Change password**: current one required (wrong guesses count towards the sign-in limits), new ≥ 12 characters and different, typed twice; every other browser is signed out, this one stays.
+  - Backend: `admin_settings` table (one row, migration `ba844e7ce9b0`, applied to the dev database), `GET|PUT /admin/settings`, `PUT /admin/settings/password`, `AuthService.change_password`. Tests: `tests/integration_api/test_settings_api.py` (15). E2E: `settings.spec.ts`, `account.spec.ts` (own project, runs last because it signs out the shared session).
+  - Architecture site: new table on the map, Settings row, two new flows (Google Translate, password change).
 
 ## Next steps
 
 1. The user creates their own admin (`cd backend && .venv/Scripts/python -m app.cli create-admin`), then removes the temporary one (`python -m app.cli delete-admin --email dev-admin@example.com`) and `.dev-credentials` (repo root).
 2. Fill in the gaps flagged "Missing …" in the admin lists: traffic for the 3 projects, diploma image + verify link.
-3. Set `ANTHROPIC_API_KEY` in `backend/.env` to enable the Translate button.
+3. Optional, paid: set `ANTHROPIC_API_KEY` in `backend/.env` and pick Claude in the admin's Settings. Until then, use Google Translate (free) or Manual there.
 4. Later: Docker; deployment behind a reverse proxy that sets X-Forwarded-For (see docs/PLAN.md); run `python -m app.cli cleanup` on a schedule there.
 
 ## Notes for resuming

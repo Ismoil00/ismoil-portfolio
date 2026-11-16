@@ -2,6 +2,7 @@
 from its name or the browser's Content-Type (both are chosen by the uploader)."""
 
 from dataclasses import dataclass
+from urllib.parse import quote
 
 from app.models.enums import MediaPurpose
 
@@ -23,6 +24,19 @@ EXTENSIONS = {
     "video/quicktime": "mov",
     SVG: "svg",
 }
+
+# Files a browser should save under their uploaded name (the résumé) instead of showing in the page.
+ATTACHMENT_TYPES = frozenset({"application/pdf"})
+
+
+def content_disposition(filename: str) -> str:
+    """The download header that keeps the exact file name (RFC 6266).
+
+    `filename*` carries the real name, UTF-8 and percent-encoded, so spaces, Cyrillic and any symbol survive;
+    `filename` is a plain-ASCII stand-in for very old clients. Neither part can break out of the header.
+    """
+    fallback = "".join(c if " " <= c <= "~" and c not in '"\\;' else "_" for c in filename)
+    return f"attachment; filename=\"{fallback}\"; filename*=UTF-8''{quote(filename, safe='')}"
 
 
 @dataclass(frozen=True)

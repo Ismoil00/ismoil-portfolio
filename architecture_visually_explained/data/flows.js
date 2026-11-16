@@ -49,10 +49,22 @@ window.ARCH.flows = [
     ],
   },
   {
-    id: "translate", title: "The Translate button",
+    id: "google", title: "Translating with Google Translate (free)",
+    lanes: ["Browser", "Admin panel", "Backend", "Google Translate website"],
+    steps: [
+      [0, 1, "every page: GET /admin/settings", "The panel layout loads the settings with /auth/me and shares them; Google Translate is the chosen translator, so every EN / RU / TG field shows Google RU and TG buttons."],
+      [1, 2, "translator = google_web", "Stored in admin_settings (one row). Picking it on /settings needs no key and costs nothing."],
+      [0, 0, "type English, press RU ↗", "Rich text is turned into plain text (paragraphs, • bullets) by an inert DOMParser; the RU tab opens."],
+      [0, 3, "new tab: translate.google.com/?sl=en&tl=ru&text=…", "The website does the translating, in your browser. The admin panel never calls Google, so no key, no card, no terms broken. Over 5,000 characters, the tab opens empty and the text is copied for pasting in parts."],
+      [3, 0, "you copy the Russian", "Paste it into the RU tab, then do the same for TG."],
+      [0, 2, "Save → PUT /admin/…", "Saved through the normal form, with the same checks as typed text."],
+    ],
+  },
+  {
+    id: "translate", title: "Translating with Claude (paid, once the key is set)",
     lanes: ["Browser", "Admin panel", "Backend", "Claude API"],
     steps: [
-      [0, 0, "type English, press Translate", "I18nField asks first if Russian or Tajik already have text (they'll be replaced)."],
+      [0, 0, "type English, press Translate", "Shown only while Claude is the chosen translator (Settings), and Claude can only be chosen once ANTHROPIC_API_KEY is set. I18nField asks first if Russian or Tajik already have text (they'll be replaced)."],
       [0, 2, "POST /admin/translate {text, format}", "Through the panel's rewrite, with the CSRF header like any write."],
       [2, 2, "no key? → 503", "Without ANTHROPIC_API_KEY, TranslationService answers 503 with how to enable it; the tabs still work by hand."],
       [2, 3, "translate (claude-opus-5-5)", "repositories/translation.py: low effort, JSON output with ru and tg."],
@@ -71,6 +83,18 @@ window.ARCH.flows = [
       [2, 3, "INSERT contact_messages", "Saved with the salted IP hash, never the raw IP."],
       [2, 0, "\"sent\"", "The Server Action returns sent / invalid / rate-limited / error."],
       [4, 2, "GET /admin/messages", "Later, the admin Contacts page lists the messages; each can be deleted."],
+    ],
+  },
+  {
+    id: "password", title: "Changing the admin password",
+    lanes: ["Browser", "Admin panel", "Backend", "PostgreSQL"],
+    steps: [
+      [0, 0, "current + new password twice", "PasswordCard checks first: at least 12 characters, the two new ones match, different from the current one."],
+      [0, 2, "PUT /admin/settings/password + X-CSRF-Token", "Through the panel's rewrite; the guard checks the session, Origin and CSRF like any write."],
+      [2, 3, "count failures (15 min)", "Wrong current passwords count like wrong sign-ins: more than 5 from this IP or 20 in total → 429."],
+      [2, 2, "verify the current password", "Argon2id. Wrong → 422 on the Current password field, and the attempt is recorded."],
+      [2, 3, "UPDATE admin_users · DELETE other admin_sessions → COMMIT", "The new Argon2id hash is stored; every other browser's session row is deleted, this one is kept."],
+      [2, 0, "204", "\"Password changed. Other browsers were signed out.\" The next sign-in anywhere needs the new password."],
     ],
   },
   {
