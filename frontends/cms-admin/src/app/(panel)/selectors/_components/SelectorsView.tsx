@@ -201,11 +201,11 @@ function Row({
           {/* eslint-disable-next-line @next/next/no-img-element -- uploaded logo */}
           {logo ? <img src={logo.url} alt="" className="max-h-7 max-w-7 object-contain" /> : <span className="text-[10px] text-faint">—</span>}
         </div>
-      ) : kind !== "positions" ? (
+      ) : (
         <div className="grid size-10 shrink-0 place-items-center rounded-lg border border-line bg-tint/[0.03]">
           {icon ? <SvgIcon svg={icon} color={color ?? undefined} className={`size-5 ${color ? "" : "text-accent"}`} /> : <span className="text-[10px] text-faint">—</span>}
         </div>
-      ) : null}
+      )}
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{nameOf(item)}</p>
@@ -232,7 +232,8 @@ function Row({
           <LuPencil className="size-4" />
         </button>
         {inUse ? (
-          <Tooltip label={`In use: ${usageText}. Remove it there first.`} align="end">
+          // To the left: a bubble above the first row would be cut off by the list's rounded frame.
+          <Tooltip label={`In use: ${usageText}. Remove it there first.`} side="left">
             <button type="button" aria-disabled="true" aria-label={`Can't delete ${nameOf(item)}: in use`} className="grid size-9 place-items-center rounded-full text-faint opacity-50">
               <LuTrash2 className="size-4" />
             </button>

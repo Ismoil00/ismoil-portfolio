@@ -15,7 +15,6 @@ from app.models import (
     Instrument,
     LinkPlatform,
     OtherLink,
-    Position,
     ProductType,
     Project,
     TechStack,
@@ -78,6 +77,7 @@ SPECS: dict[str, SelectorSpec] = {
             ("tech_stacks", links.tech_stack_fields.c.field_id),
             ("experiences", links.experience_fields.c.field_id),
             ("certificates", links.certificate_fields.c.field_id),
+            ("testimonials", Testimonial.field_id),  # "my role" on a testimonial
         ],
         flags=["filter_active"],
     ),
@@ -95,15 +95,13 @@ SPECS: dict[str, SelectorSpec] = {
         references=[
             ("experiences", links.experience_techs.c.tech_stack_id),
             ("projects", links.project_techs.c.tech_stack_id),
+            ("testimonials", Testimonial.tech_stack_id),  # "my role" on a testimonial
         ],
         flags=["showcase_active"],
         links=[
             LinkSpec("field_ids", links.tech_stack_fields, "tech_stack_id", "field_id", DevelopmentField),
             LinkSpec("instrument_ids", links.tech_stack_instruments, "tech_stack_id", "instrument_id", Instrument),
         ],
-    ),
-    "positions": SelectorSpec(
-        Position, "position", i18n_name=True, references=[("testimonials", Testimonial.position_id)]
     ),
     "companies": SelectorSpec(
         Company,

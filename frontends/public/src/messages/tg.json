@@ -265,7 +265,7 @@
     "civilEngineering": "Сохтмон ва меъморӣ"
   },
   "testimonials": {
-    "myPosition": "Вазифаи ман",
+    "myRole": "Нақши ман",
     "project": "{count, plural, =1 {Лоиҳа} other {Лоиҳаҳо}}",
     "verify": "Санҷиши тақриз",
     "verifyHint": "Профили оммавии муаллифро дар ҷадвали нав мекушояд",

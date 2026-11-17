@@ -11,7 +11,6 @@ from app.models.selectors import (
     Institute,
     Instrument,
     LinkPlatform,
-    Position,
     ProductType,
     TechStack,
 )
@@ -35,7 +34,6 @@ __all__ = [
     "LoginAttempt",
     "Media",
     "OtherLink",
-    "Position",
     "ProductType",
     "Project",
     "TechStack",

@@ -68,11 +68,11 @@ window.ARCH.backend = {
         ["app/services/settings.py", "Settings page rules: the translator choice (manual by default; Claude only once ANTHROPIC_API_KEY is set)."],
         ["app/services/sections.py", "Hero, About, Contacts (at least two channels), Other links, Tech stack page, contact messages (5 per IP + 30 in total per hour, honeypot)."],
         ["app/services/content.py", "Only one current job; private project ⇔ no links and no media; gallery ≤ 10 images + 2 videos; certificates 1–5 images; slugs; files removed from a form are deleted."],
-        ["app/services/selectors.py", "Unique names, valid references, logos, ordering, and no deleting what's in use (409 with what uses it). One service for 8 kinds, configured by SPECS."],
+        ["app/services/selectors.py", "Unique names, valid references, logos, ordering, and no deleting what's in use (409 with what uses it). One service for 7 kinds, configured by SPECS."],
         ["app/services/media.py", "Uploads: type from the first bytes, size per purpose, Pillow inspection, metadata stripped, SVG cleaned, the file's own name kept for downloads; cleanup of unused files after 24 h."],
         ["app/services/public.py", "What the public site shows: one language at a time, computed numbers (months of experience with overlaps merged), only published data."],
         ["app/services/translation.py", "Translate button: calls the translator, cleans the answer, 503 when no key is set."],
-        ["app/services/seed.py", "Loads seed/content.json into an empty database (refuses otherwise)."],
+        ["app/services/seed.py", "Loads seed/content.json into an empty database (refuses otherwise); add_missing_selectors adds the seed's development fields and technologies a filled database lacks (by name, never changes or deletes)."],
       ],
     },
     {
@@ -123,6 +123,7 @@ window.ARCH.backend = {
         ["app/core/throttle.py", "\"At most N events in the last T\" limits."],
         ["app/core/places.py", "Countries and time zones for About."],
         ["app/core/contacts.py", "Email, Telegram, WhatsApp, LinkedIn formats and links."],
+        ["app/core/roles.py", "How \"my role\" on a testimonial reads: a field or technology name + \" development\" / \" Разработчик\" / \" Барномасоз\" (nothing added when it already ends in \"development\")."],
       ],
     },
     {
@@ -135,7 +136,7 @@ window.ARCH.backend = {
     {
       title: "Outside the request path", color: "--l-core",
       files: [
-        ["app/cli.py", "create-admin, delete-admin, seed, cleanup."],
+        ["app/cli.py", "create-admin, delete-admin, seed, import-selectors, cleanup."],
         ["alembic/", "Migrations: env.py reads the URL from the app settings; versions/ holds 2 revisions."],
         ["scripts/", "create_db.ps1 + .sql (one-time setup); export_architecture_db.py (this site's database data)."],
         ["tests/", "unit/ (no database) and integration_api/ (HTTP → real test database)."],
@@ -149,14 +150,14 @@ window.ARCH.backend = {
     rows: [
       { area: "Sign-in", cells: ["api/auth.py · api/auth_deps.py", "schemas/auth.py", "services/auth.py", "repositories/auth.py", "admin_users · admin_sessions · login_attempts"] },
       { area: "Uploads", cells: ["api/admin/media.py · api/media_files.py", "schemas/media.py", "services/media.py", "repositories/media.py · repositories/storage.py", "media"] },
-      { area: "Selectors", cells: ["api/admin/selectors.py", "schemas/selectors.py", "services/selectors.py", "repositories/selectors.py", "8 selector tables + 2 links"] },
+      { area: "Selectors", cells: ["api/admin/selectors.py", "schemas/selectors.py", "services/selectors.py", "repositories/selectors.py", "7 selector tables + 2 links"] },
       { area: "Sections", cells: ["api/admin/sections.py", "schemas/sections.py", "services/sections.py", "repositories/sections.py", "hero · about · contacts · other_links"] },
       { area: "Content", cells: ["api/admin/content.py", "schemas/content.py", "services/content.py", "repositories/content.py · repositories/links.py", "experiences · projects · testimonials · certificates + links"] },
       { area: "Public site", cells: ["api/public/content.py", "schemas/public.py", "services/public.py", "repositories/public.py", "reads almost all"] },
       { area: "Contact form", cells: ["api/public/contact.py", "schemas/sections.py", "services/sections.py", "repositories/sections.py", "contact_messages"] },
       { area: "Translate", cells: ["api/admin/translate.py", "(in the route file)", "services/translation.py", "repositories/translation.py", "— (Claude API)"] },
       { area: "Settings", cells: ["api/admin/settings.py", "schemas/settings.py", "services/settings.py · services/auth.py", "repositories/settings.py · repositories/auth.py", "admin_settings · admin_users · admin_sessions"] },
-      { area: "Seed", cells: ["cli.py seed", "seed/content.json", "services/seed.py", "all repositories", "all"] },
+      { area: "Seed", cells: ["cli.py seed · import-selectors", "seed/content.json", "services/seed.py", "all repositories", "all"] },
     ],
   },
 

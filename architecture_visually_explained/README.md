@@ -18,7 +18,7 @@ Keys: `/` jumps to search, `Esc` closes the details panel, `←` `→` step thro
 | 1 · System | Browsers, the two Next.js apps, the backend, PostgreSQL, storage, Claude, CLI, E2E: every box and arrow is clickable; "Play a journey" animates a request |
 | 2 · Backend | The layers one request passes (middleware → routers → dependencies → handlers → schemas → services → repositories → models), every file, who handles each feature, the error codes |
 | 3 · Frontends | How a request flows through each app, every page and the backend routes it calls |
-| 4 · Database | All 34 tables grouped by meaning, entity view (link tables folded into many-to-many lines) or every table, a focus view per table with its columns and neighbours, delete behaviour, CHECK rules, other objects, conventions |
+| 4 · Database | All 33 tables grouped by meaning, entity view (link tables folded into many-to-many lines) or every table, a focus view per table with its columns and neighbours, delete behaviour, CHECK rules, other objects, conventions |
 | 5 · Flows | Sequence diagrams: a page visit, signing in, saving with an upload, Translate, the contact form, a blocked delete |
 
 ## Keep it current

@@ -265,7 +265,7 @@
     "civilEngineering": "Civil engineering & architecture"
   },
   "testimonials": {
-    "myPosition": "My position",
+    "myRole": "My role",
     "project": "{count, plural, =1 {Project} other {Projects}}",
     "verify": "Verify testimony",
     "verifyHint": "Opens the author's public profile in a new tab",

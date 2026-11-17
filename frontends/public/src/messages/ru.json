@@ -265,7 +265,7 @@
     "civilEngineering": "Строительство и архитектура"
   },
   "testimonials": {
-    "myPosition": "Моя должность",
+    "myRole": "Моя роль",
     "project": "{count, plural, =1 {Проект} other {Проекты}}",
     "verify": "Проверить отзыв",
     "verifyHint": "Откроет публичный профиль автора в новой вкладке",

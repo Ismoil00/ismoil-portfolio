@@ -9,16 +9,17 @@ export const metadata: Metadata = { title: "Edit testimonial" };
 
 export default async function EditTestimonialPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [item, companies, positions, projects] = await Promise.all([
+  const [item, companies, fields, techs, projects] = await Promise.all([
     serverGet<Testimonial>(`/admin/testimonials/${encodeURIComponent(id)}`),
     loadOptions.companies(),
-    loadOptions.positions(),
+    loadOptions.fields(),
+    loadOptions.techs(),
     loadOptions.projects(),
   ]);
   return (
     <>
       <EditorHeader backHref="/testimonials" backLabel="Testimonials" title={item.author_name.en} deleteUrl={`/admin/testimonials/${item.id}`} itemName={`the testimonial from ${item.author_name.en}`} />
-      <TestimonialForm item={item} companies={companies} positions={positions} projects={projects} />
+      <TestimonialForm item={item} companies={companies} fields={fields} techs={techs} projects={projects} />
     </>
   );
 }

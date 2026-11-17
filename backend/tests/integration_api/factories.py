@@ -39,10 +39,6 @@ async def product_type(client, name: str = "Web") -> dict:
     return await post(client, "/selectors/product-types", {"name": i18n(name), "icon_svg": ICON})
 
 
-async def position(client, name: str = "Full-stack developer") -> dict:
-    return await post(client, "/selectors/positions", {"name": i18n(name)})
-
-
 async def institute(client, name: str = "Tajik Technical University") -> dict:
     return await post(client, "/selectors/institutes", {"name": i18n(name)})
 

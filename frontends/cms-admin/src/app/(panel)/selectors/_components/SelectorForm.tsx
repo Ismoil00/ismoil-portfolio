@@ -31,7 +31,7 @@ interface FormValues {
   instrument_ids: string[];
 }
 
-const I18N_NAME: SelectorKind[] = ["development-fields", "instruments", "positions", "institutes", "product-types"];
+const I18N_NAME: SelectorKind[] = ["development-fields", "instruments", "institutes", "product-types"];
 const ICON: SelectorKind[] = ["development-fields", "instruments", "tech-stacks", "product-types", "link-platforms"];
 const ICON_REQUIRED: SelectorKind[] = ["tech-stacks", "product-types"];
 const WEBSITE: SelectorKind[] = ["companies", "institutes"];
@@ -88,8 +88,6 @@ function toBody(kind: SelectorKind, v: FormValues): Record<string, unknown> {
       return { name, icon_svg: v.icon_svg };
     case "tech-stacks":
       return { name, icon_svg: v.icon_svg, color: v.color, docs_url: v.docs_url || null, field_ids: v.field_ids, instrument_ids: v.instrument_ids };
-    case "positions":
-      return { name };
     case "companies":
     case "institutes":
       return { name, website_url: v.website_url || null, logo_id: v.logo?.id ?? null };

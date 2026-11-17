@@ -9,13 +9,13 @@ import { TestimonialMedia } from "./TestimonialMedia";
 import { ExpandableQuote } from "./ExpandableQuote";
 
 const labelClass = "font-display text-[11px] uppercase tracking-[0.18em] text-subtle";
-/** One style for the author's role, my position and the project name (the project is also underlined). */
+/** One style for the author's role, my role and the project name (the project is also underlined). */
 const detailClass = "text-sm font-normal not-italic text-muted";
 
 /**
  * Testimonial card — used on the home page and on /testimonials.
  * Same frame as the project/certificate cards: photo or video on top, then
- * date (month.year) · "Author · Role" · company · my position there · the quote (2 lines,
+ * date (month.year) · "Author · Role" · company · my role there · the quote (2 lines,
  * "Read all") · the project it's about · "Verify testimony" (any public link of the author).
  * The project link and the verify button sit at the bottom, aligned across a row.
  * `id="testimonial-<id>"` lets experience cards link straight to it.
@@ -67,10 +67,10 @@ export function TestimonialCard({ item }: { item: Testimonial }) {
               item.company.name
             )}
           </p>
-          {item.myPosition && (
+          {item.myRole && (
             <p className="mt-3 flex flex-wrap items-baseline gap-x-2">
-              <span className={labelClass}>{t("myPosition")}:</span>
-              <span className={detailClass}>{item.myPosition}</span>
+              <span className={labelClass}>{t("myRole")}:</span>
+              <span className={detailClass}>{item.myRole}</span>
             </p>
           )}
           {item.quote && <ExpandableQuote text={item.quote} />}

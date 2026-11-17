@@ -70,7 +70,6 @@ def _register(kind: str, body: type[InputModel], out: type[OutputModel]) -> None
 _register("development-fields", s.DevelopmentFieldIn, s.DevelopmentFieldOut)
 _register("instruments", s.InstrumentIn, s.InstrumentOut)
 _register("tech-stacks", s.TechStackIn, s.TechStackOut)
-_register("positions", s.PositionIn, s.PositionOut)
 _register("companies", s.CompanyIn, s.CompanyOut)
 _register("institutes", s.InstituteIn, s.InstituteOut)
 _register("product-types", s.ProductTypeIn, s.ProductTypeOut)

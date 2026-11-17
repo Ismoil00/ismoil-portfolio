@@ -6,11 +6,16 @@ import { TestimonialForm } from "../TestimonialForm";
 export const metadata: Metadata = { title: "New testimonial" };
 
 export default async function NewTestimonialPage() {
-  const [companies, positions, projects] = await Promise.all([loadOptions.companies(), loadOptions.positions(), loadOptions.projects()]);
+  const [companies, fields, techs, projects] = await Promise.all([
+    loadOptions.companies(),
+    loadOptions.fields(),
+    loadOptions.techs(),
+    loadOptions.projects(),
+  ]);
   return (
     <>
       <EditorHeader backHref="/testimonials" backLabel="Testimonials" title="New testimonial" />
-      <TestimonialForm item={null} companies={companies} positions={positions} projects={projects} />
+      <TestimonialForm item={null} companies={companies} fields={fields} techs={techs} projects={projects} />
     </>
   );
 }

@@ -2253,68 +2253,6 @@ window.ARCH.dbSchema = {
    ]
   },
   {
-   "name": "positions",
-   "model": "Position",
-   "module": "app/models/selectors.py",
-   "doc": "A position I held (\"Full-stack developer\"…): \"My position\" on testimonials.",
-   "columns": [
-    {
-     "name": "name",
-     "type": "JSONB",
-     "nullable": false,
-     "pk": false,
-     "unique": false,
-     "default": null,
-     "onUpdate": null,
-     "fk": null
-    },
-    {
-     "name": "position",
-     "type": "INTEGER",
-     "nullable": false,
-     "pk": false,
-     "unique": false,
-     "default": null,
-     "onUpdate": null,
-     "fk": null
-    },
-    {
-     "name": "id",
-     "type": "UUID",
-     "nullable": false,
-     "pk": true,
-     "unique": false,
-     "default": "uuid4() in Python",
-     "onUpdate": null,
-     "fk": null
-    },
-    {
-     "name": "created_at",
-     "type": "TIMESTAMP WITH TIME ZONE",
-     "nullable": false,
-     "pk": false,
-     "unique": false,
-     "default": "now()",
-     "onUpdate": null,
-     "fk": null
-    },
-    {
-     "name": "updated_at",
-     "type": "TIMESTAMP WITH TIME ZONE",
-     "nullable": false,
-     "pk": false,
-     "unique": false,
-     "default": "now()",
-     "onUpdate": "now()",
-     "fk": null
-    }
-   ],
-   "foreignKeys": [],
-   "checks": [],
-   "uniques": [],
-   "indexes": []
-  },
-  {
    "name": "product_types",
    "model": "ProductType",
    "module": "app/models/selectors.py",
@@ -3238,7 +3176,7 @@ window.ARCH.dbSchema = {
    "name": "testimonials",
    "model": "Testimonial",
    "module": "app/models/content.py",
-   "doc": "",
+   "doc": "A recommendation. My role then is a development field or a technology, shown with \"development\" added (\"Frontend development\", \"Python development\").",
    "columns": [
     {
      "name": "author_name",
@@ -3275,15 +3213,29 @@ window.ARCH.dbSchema = {
      }
     },
     {
-     "name": "position_id",
+     "name": "field_id",
      "type": "UUID",
-     "nullable": false,
+     "nullable": true,
      "pk": false,
      "unique": false,
      "default": null,
      "onUpdate": null,
      "fk": {
-      "table": "positions",
+      "table": "development_fields",
+      "column": "id",
+      "onDelete": "RESTRICT"
+     }
+    },
+    {
+     "name": "tech_stack_id",
+     "type": "UUID",
+     "nullable": true,
+     "pk": false,
+     "unique": false,
+     "default": null,
+     "onUpdate": null,
+     "fk": {
+      "table": "tech_stacks",
       "column": "id",
       "onDelete": "RESTRICT"
      }
@@ -3376,6 +3328,17 @@ window.ARCH.dbSchema = {
      "onDelete": "RESTRICT"
     },
     {
+     "name": "fk_testimonials_field_id_development_fields",
+     "columns": [
+      "field_id"
+     ],
+     "table": "development_fields",
+     "refColumns": [
+      "id"
+     ],
+     "onDelete": "RESTRICT"
+    },
+    {
      "name": "fk_testimonials_media_id_media",
      "columns": [
       "media_id"
@@ -3387,18 +3350,23 @@ window.ARCH.dbSchema = {
      "onDelete": "RESTRICT"
     },
     {
-     "name": "fk_testimonials_position_id_positions",
+     "name": "fk_testimonials_tech_stack_id_tech_stacks",
      "columns": [
-      "position_id"
+      "tech_stack_id"
      ],
-     "table": "positions",
+     "table": "tech_stacks",
      "refColumns": [
       "id"
      ],
      "onDelete": "RESTRICT"
     }
    ],
-   "checks": [],
+   "checks": [
+    {
+     "name": "ck_testimonials_one_role",
+     "sql": "(field_id IS NULL) <> (tech_stack_id IS NULL)"
+    }
+   ],
    "uniques": [
     {
      "name": "uq_testimonials_media_id",
@@ -3417,9 +3385,17 @@ window.ARCH.dbSchema = {
      "where": null
     },
     {
-     "name": "ix_testimonials_position_id",
+     "name": "ix_testimonials_field_id",
      "columns": [
-      "position_id"
+      "field_id"
+     ],
+     "unique": false,
+     "where": null
+    },
+    {
+     "name": "ix_testimonials_tech_stack_id",
+     "columns": [
+      "tech_stack_id"
      ],
      "unique": false,
      "where": null

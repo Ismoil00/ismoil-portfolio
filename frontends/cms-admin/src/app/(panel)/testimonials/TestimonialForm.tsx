@@ -10,7 +10,7 @@ import { api } from "@/api/client";
 import { Field, TextInput } from "@/components/form/Field";
 import { I18nField } from "@/components/form/I18nField";
 import { MultiPickField } from "@/components/form/MultiPickField";
-import { companyOptions, positionOptions, projectOptions } from "@/components/form/options";
+import { companyOptions, fieldOptions, projectOptions, techOptions } from "@/components/form/options";
 import { Picker } from "@/components/form/Picker";
 import { SaveBar } from "@/components/form/SaveBar";
 import { applyServerErrors } from "@/components/form/server-errors";
@@ -19,21 +19,28 @@ import { Card } from "@/components/ui/Card";
 import { useToast } from "@/components/ui/Toast";
 import { emptyI18n, i18nOrEmpty, i18nOrNull } from "@/lib/i18n";
 import { i18nOptional, i18nRequired, url } from "@/lib/validation";
-import type { Company, Media, Position, Project, Testimonial } from "@/types/api";
+import type { Company, DevelopmentField, Media, Project, TechStack, Testimonial } from "@/types/api";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-const schema = z.object({
-  author_name: i18nRequired(100),
-  author_role: i18nRequired(100),
-  company_id: z.string().min(1, "Pick the company"),
-  position_id: z.string().min(1, "Pick your position"),
-  given_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick the date").refine((v) => v <= today(), "This date is in the future"),
-  quote: i18nOptional(1000, "multiline"),
-  media: z.custom<Media | null>(),
-  verify_url: url(),
-  project_ids: z.array(z.string()),
-});
+const schema = z
+  .object({
+    author_name: i18nRequired(100),
+    author_role: i18nRequired(100),
+    company_id: z.string().min(1, "Pick the company"),
+    // My role: a development field or a technology ("" = not picked). Picking one clears the other.
+    field_id: z.string(),
+    tech_stack_id: z.string(),
+    given_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick the date").refine((v) => v <= today(), "This date is in the future"),
+    quote: i18nOptional(1000, "multiline"),
+    media: z.custom<Media | null>(),
+    verify_url: url(),
+    project_ids: z.array(z.string()),
+  })
+  .refine((v) => Boolean(v.field_id) !== Boolean(v.tech_stack_id), {
+    path: ["field_id"],
+    message: "Pick a development field or a technology",
+  });
 type Values = z.infer<typeof schema>;
 
 function toValues(t: Testimonial | null): Values {
@@ -41,7 +48,8 @@ function toValues(t: Testimonial | null): Values {
     author_name: t?.author_name ?? emptyI18n(),
     author_role: t?.author_role ?? emptyI18n(),
     company_id: t?.company.id ?? "",
-    position_id: t?.position.id ?? "",
+    field_id: t?.field?.id ?? "",
+    tech_stack_id: t?.tech_stack?.id ?? "",
     given_on: t?.given_on ?? "",
     quote: i18nOrEmpty(t?.quote),
     media: t?.media ?? null,
@@ -53,23 +61,32 @@ function toValues(t: Testimonial | null): Values {
 export function TestimonialForm({
   item,
   companies,
-  positions,
+  fields,
+  techs,
   projects,
 }: {
   item: Testimonial | null;
   companies: Company[];
-  positions: Position[];
+  fields: DevelopmentField[];
+  techs: TechStack[];
   projects: Project[];
 }) {
   const router = useRouter();
   const toast = useToast();
   const methods = useForm<Values>({ defaultValues: toValues(item), resolver: zodResolver(schema) });
-  const { control, register, handleSubmit, reset, setError, formState } = methods;
+  const { control, register, handleSubmit, reset, setError, setValue, clearErrors, formState } = methods;
   const [saveError, setSaveError] = useState<string | null>(null);
 
   async function save(v: Values) {
     setSaveError(null);
-    const body = { ...v, quote: i18nOrNull(v.quote), media_id: v.media?.id ?? null, media: undefined };
+    const body = {
+      ...v,
+      field_id: v.field_id || null,
+      tech_stack_id: v.tech_stack_id || null,
+      quote: i18nOrNull(v.quote),
+      media_id: v.media?.id ?? null,
+      media: undefined,
+    };
     try {
       const { data } = item
         ? await api.put<Testimonial>(`/admin/testimonials/${item.id}`, body)
@@ -79,8 +96,17 @@ export function TestimonialForm({
       router.push("/testimonials");
       router.refresh();
     } catch (error) {
-      setSaveError(applyServerErrors(error, setError, (p) => (p === "media_id" ? "media" : p.replace(/\.\d+$/, ""))));
+      const toField = (p: string) => (p === "media_id" ? "media" : p === "tech_stack_id" ? "field_id" : p.replace(/\.\d+$/, ""));
+      setSaveError(applyServerErrors(error, setError, toField));
     }
+  }
+
+  /** Exactly one role: picking a field clears the technology and the other way round. */
+  function pickRole(name: "field_id" | "tech_stack_id", value: string | null) {
+    const other = name === "field_id" ? "tech_stack_id" : "field_id";
+    setValue(name, value ?? "", { shouldDirty: true });
+    if (value) setValue(other, "", { shouldDirty: true });
+    clearErrors("field_id");
   }
 
   const selectorLink = (kind: string, label: string) => (
@@ -105,15 +131,6 @@ export function TestimonialForm({
                 </Field>
               )}
             />
-            <Controller
-              control={control}
-              name="position_id"
-              render={({ field, fieldState }) => (
-                <Field label="Your position there" htmlFor="t-position" required error={fieldState.error?.message} hint={<>From the {selectorLink("positions", "Positions")} list.</>}>
-                  <Picker id="t-position" options={positionOptions(positions)} value={field.value || null} onChange={(v) => field.onChange(v ?? "")} placeholder="Pick a position" invalid={Boolean(fieldState.error)} />
-                </Field>
-              )}
-            />
           </div>
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
             <Field label="Date" htmlFor="t-date" required error={formState.errors.given_on?.message}>
@@ -123,6 +140,45 @@ export function TestimonialForm({
               <TextInput id="t-verify" {...register("verify_url")} placeholder="https://www.linkedin.com/in/…" inputMode="url" invalid={Boolean(formState.errors.verify_url)} />
             </Field>
           </div>
+        </Card>
+
+        <Card
+          title="My role"
+          description={
+            <>
+              Pick one: a {selectorLink("development-fields", "development field")} or a {selectorLink("tech-stacks", "technology")}. The site adds
+              “development”: Frontend development, Python development.
+            </>
+          }
+        >
+          <Field error={formState.errors.field_id?.message}>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label htmlFor="t-field" className="mb-1.5 block text-sm font-medium text-muted">
+                  Development field
+                </label>
+                <Controller
+                  control={control}
+                  name="field_id"
+                  render={({ field, fieldState }) => (
+                    <Picker id="t-field" options={fieldOptions(fields)} value={field.value || null} onChange={(v) => pickRole("field_id", v)} placeholder="Pick a field" invalid={Boolean(fieldState.error)} />
+                  )}
+                />
+              </div>
+              <div>
+                <label htmlFor="t-tech" className="mb-1.5 block text-sm font-medium text-muted">
+                  Technology
+                </label>
+                <Controller
+                  control={control}
+                  name="tech_stack_id"
+                  render={({ field }) => (
+                    <Picker id="t-tech" options={techOptions(techs)} value={field.value || null} onChange={(v) => pickRole("tech_stack_id", v)} placeholder="Pick a technology" invalid={Boolean(formState.errors.field_id)} />
+                  )}
+                />
+              </div>
+            </div>
+          </Field>
         </Card>
 
         <Card title="What they said">

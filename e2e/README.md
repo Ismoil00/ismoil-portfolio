@@ -51,5 +51,6 @@ and screenshots in `test-results/`, the report in `playwright-report/` (all git-
 | `listings.spec.ts` | Filters (kept in the URL), "Show more" |
 | `languages-themes.spec.ts` | Every page in EN/RU/TG without errors, language switcher, light/dark on both apps |
 | `empty-sections.spec.ts` | Testimonials hidden while there are none (section, menu, page 404, sitemap), no traffic row, NDA note |
+| `testimonial-role.spec.ts` | "My role" on a testimonial: required, picking a technology clears the field, the list and the site show "Python development" / "Python Разработчик" / "Python Барномасоз" |
 | `mobile.spec.ts` | Phone screen: no sideways scrolling, menu navigation |
 | `account.spec.ts` | Runs last (own project): password change in Settings: mismatch caught, other browsers signed out, old password refused, new one works; then changed back |

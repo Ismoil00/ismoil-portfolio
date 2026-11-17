@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 
 from app.api.deps import MediaServiceDep, SessionDep, media_out
+from app.core.roles import role_label
 from app.core.text import date_to_month
 from app.models import Certificate, Company, Experience, Institute, Project, Testimonial
 from app.repositories.content import ContentRepository
@@ -20,6 +21,7 @@ from app.schemas.content import (
     NamedRef,
     ProjectIn,
     ProjectOut,
+    TechRef,
     TestimonialIn,
     TestimonialOut,
 )
@@ -86,7 +88,9 @@ def testimonial_out(item: Testimonial, media: MediaService) -> TestimonialOut:
         author_name=item.author_name,
         author_role=item.author_role,
         company=company_ref(item.company, media),
-        position=NamedRef(id=item.my_position.id, name=item.my_position.name),
+        field=NamedRef(id=item.field.id, name=item.field.name) if item.field else None,
+        tech_stack=TechRef(id=item.tech_stack.id, name=item.tech_stack.name) if item.tech_stack else None,
+        role=role_label((item.field or item.tech_stack).name),
         given_on=item.given_on,
         quote=item.quote,
         media=media_out(item.media, media) if item.media else None,

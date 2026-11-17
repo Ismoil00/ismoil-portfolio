@@ -214,7 +214,7 @@ class TestimonialItem(PublicModel):
     author: str
     role: str
     company: Organization
-    my_position: str
+    my_role: str  # "Frontend development": a development field or a technology
     date: str  # YYYY-MM-DD
     quote: str | None
     media: MediaItem | None

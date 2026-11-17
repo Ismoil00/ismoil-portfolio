@@ -47,7 +47,7 @@ Commands below run in PowerShell from the `frontends/cms-admin/` folder.
 | `/login` | Sign in (the account is created with `python -m app.cli create-admin`) |
 | `/hero`, `/about`, `/contacts`, `/tech-stack` | One section each (`/` opens `/hero`) |
 | `/experience`, `/projects`, `/testimonials`, `/certificates` | A list, plus `/new` and `/[id]` editors |
-| `/selectors` | The reusable lists: development fields, instruments, technologies, positions, companies, institutes, product types, link platforms |
+| `/selectors` | The reusable lists: development fields, instruments, technologies, companies, institutes, product types, link platforms |
 | `/settings` | The panel itself (bottom of the sidebar): the translator next to every EN / RU / TG field (Google Translate · Manual · Claude once its key is set) and changing the password |
 
 ## Folders

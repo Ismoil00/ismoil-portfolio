@@ -2,7 +2,7 @@
 
 Plan and decisions: [`docs/PLAN.md`](docs/PLAN.md). Resume from the first unchecked item.
 
-_Last updated: 2026-11-16 (architecture site; experience summary endpoint removed; résumé download name fix; admin Settings page) — backend: 346 tests passing + ruff clean; admin and public: tsc + eslint clean; public `next build` passes; E2E: 40 passing_
+_Last updated: 2026-11-16 (testimonial role from a field or technology, Positions removed; roadmap.sh selectors imported; Selectors tooltip, scrollbar and hydration fixes) — backend: 354 tests passing + ruff clean; admin and public: tsc + eslint clean; E2E: 42 passing_
 
 ## Phases
 
@@ -58,6 +58,12 @@ _Last updated: 2026-11-16 (architecture site; experience summary endpoint remove
   - **Change password**: current one required (wrong guesses count towards the sign-in limits), new ≥ 12 characters and different, typed twice; every other browser is signed out, this one stays.
   - Backend: `admin_settings` table (one row, migration `ba844e7ce9b0`, applied to the dev database), `GET|PUT /admin/settings`, `PUT /admin/settings/password`, `AuthService.change_password`. Tests: `tests/integration_api/test_settings_api.py` (15). E2E: `settings.spec.ts`, `account.spec.ts` (own project, runs last because it signs out the shared session).
   - Architecture site: new table on the map, Settings row, two new flows (Google Translate, password change).
+
+- [x] **17. Testimonial role, Positions removed, roadmap.sh import** (2026-11-16)
+  - "My role" on a testimonial is one development field or one technology (DB CHECK `ck_testimonials_one_role`, migration `a5b16569363c`, applied to the dev database). The site adds "development": EN "Python development", RU "Python Разработчик", TG "Python Барномасоз" (`app/core/roles.py`); names already ending in "development" are shown as they are. Label "My role" / "Моя роль" / "Нақши ман". The Positions list, its table and API are gone. Admin form: two searchable pickers, picking one clears the other.
+  - roadmap.sh roles, skills and best practices: 27 development fields and 31 technologies added to `seed/content.json` (no duplicates by name or meaning). New command `python -m app.cli import-selectors` adds the ones a filled database lacks (by name, nothing changed or deleted); run on the dev database. Tests: `test_import_selectors.py`.
+  - Fixes on the Selectors page: the in-use delete tooltip opens to the left (no longer cut off), `scrollbar-gutter: stable` (no sideways jump between long and short lists), dnd-kit hydration mismatch (stable `id` on `DndContext`).
+  - E2E: `testimonial-role.spec.ts`. Architecture site: data regenerated, positions removed, new CHECK rule, counts, commands.
 
 ## Next steps
 

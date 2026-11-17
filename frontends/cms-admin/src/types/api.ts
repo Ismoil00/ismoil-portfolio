@@ -39,10 +39,6 @@ export interface TechStack extends SelectorBase {
   instrument_ids: string[];
 }
 
-export interface Position extends SelectorBase {
-  name: I18nText;
-}
-
 export interface Company extends SelectorBase {
   name: string;
   website_url: string | null;
@@ -70,7 +66,6 @@ export interface SelectorItems {
   "development-fields": DevelopmentField;
   instruments: Instrument;
   "tech-stacks": TechStack;
-  positions: Position;
   companies: Company;
   institutes: Institute;
   "product-types": ProductType;
@@ -191,7 +186,11 @@ export interface Testimonial {
   author_name: I18nText;
   author_role: I18nText;
   company: CompanyRef;
-  position: { id: string; name: I18nText };
+  /** My role: a development field or a technology, exactly one. */
+  field: { id: string; name: I18nText } | null;
+  tech_stack: { id: string; name: string } | null;
+  /** How it reads on the site: "Frontend development", per language. */
+  role: I18nText;
   given_on: string;
   quote: I18nText | null;
   media: Media | null;

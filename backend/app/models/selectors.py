@@ -59,15 +59,6 @@ class TechStack(UUIDPk, Timestamps, Base):
     )
 
 
-class Position(UUIDPk, Timestamps, Base):
-    """A position I held ("Full-stack developer"…): "My position" on testimonials."""
-
-    __tablename__ = "positions"
-
-    name: Mapped[I18nDict]
-    position: Mapped[int] = mapped_column(default=0)
-
-
 class Company(UUIDPk, Timestamps, Base):
     """Employer or client: experience, projects, testimonials."""
 

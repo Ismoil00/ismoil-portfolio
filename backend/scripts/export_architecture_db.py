@@ -2,7 +2,8 @@
 
 Run from backend/:  .venv/Scripts/python scripts/export_architecture_db.py
 Output: architecture_visually_explained/data/db-schema.generated.js (do not edit it by hand).
-tests/unit/test_architecture_db.py fails while that file is out of date.
+tests_architecture/test_architecture_db.py fails while that file is out of date
+(run on its own: .venv/Scripts/python -m pytest tests_architecture).
 """
 
 import inspect

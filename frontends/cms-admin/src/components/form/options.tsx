@@ -1,6 +1,6 @@
 import { LuBuilding2 } from "react-icons/lu";
 import { SvgIcon } from "@/components/ui/SvgIcon";
-import type { Company, DevelopmentField, Position, ProductType, Project, TechStack, Testimonial } from "@/types/api";
+import type { Company, DevelopmentField, ProductType, Project, TechStack, Testimonial } from "@/types/api";
 import type { PickerOption } from "./Picker";
 
 // Picker options built from selector lists, with their icons — shared by the editor forms.
@@ -29,8 +29,6 @@ export const fieldOptions = (items: DevelopmentField[]): PickerOption[] =>
 
 export const typeOptions = (items: ProductType[]): PickerOption[] =>
   items.map((t) => ({ value: t.id, label: t.name.en, icon: <SvgIcon svg={t.icon_svg} className="size-4 text-accent" /> }));
-
-export const positionOptions = (items: Position[]): PickerOption[] => items.map((p) => ({ value: p.id, label: p.name.en }));
 
 export const projectOptions = (items: Project[]): PickerOption[] =>
   items.map((p) => ({ value: p.id, label: p.title.en, note: p.end.slice(0, 4) }));

@@ -22,13 +22,15 @@ test.describe("Hidden while empty", () => {
     const api = await adminApi();
     try {
       const company = await api.selector("companies", "Smartpay");
-      const position = await api.selector("positions", "Full-stack developer");
+      // My role there: a technology here, shown with "development" added.
+      const python = await api.selector("tech-stacks", "Python");
       const projects = await api.get<{ id: string }[]>("projects");
       const testimonial = await api.post<{ id: string }>("testimonials", {
         author_name: i18n("Sample Author"),
         author_role: i18n("Team lead"),
         company_id: company.id,
-        position_id: position.id,
+        field_id: null,
+        tech_stack_id: python.id,
         given_on: "2025-04-10",
         quote: i18n("Added by the end-to-end tests and removed right after."),
         media_id: null,
@@ -41,6 +43,7 @@ test.describe("Hidden while empty", () => {
         const section = page.locator("#testimonials");
         await expect(section).toBeVisible();
         await expect(section.getByRole("heading", { name: "Sample Author" })).toBeVisible();
+        await expect(section.getByText("Python development")).toBeVisible();
         await expect(testimonialsLink(page).first()).toBeAttached();
         expect((await page.request.get(site("/en/testimonials"))).status()).toBe(200);
         expect(await (await page.request.get(site("/sitemap.xml"))).text()).toContain("/en/testimonials");

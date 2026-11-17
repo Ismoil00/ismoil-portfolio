@@ -1,5 +1,5 @@
-"""Selectors page: the reusable lists (development fields, instruments, tech stacks, positions,
-companies, institutes, product types, link platforms)."""
+"""Selectors page: the reusable lists (development fields, instruments, tech stacks, companies,
+institutes, product types, link platforms)."""
 
 import pytest
 
@@ -20,7 +20,6 @@ SAMPLES = {
         {"name": "Python", "icon_svg": ICON, "color": "#3776ab", "docs_url": "https://docs.python.org/3/"},
         {"name": "Python 3", "icon_svg": ICON, "color": "#3776AB", "docs_url": None},
     ),
-    "positions": ({"name": i18n("Full-stack developer")}, {"name": i18n("Backend developer")}),
     "companies": ({"name": "Smartpay", "website_url": "https://smartpay.example"}, {"name": "Smartpay LLC"}),
     "institutes": ({"name": i18n("Tajik Technical University")}, {"name": i18n("TTU")}),
     "product-types": ({"name": i18n("Web"), "icon_svg": ICON}, {"name": i18n("Website"), "icon_svg": ICON}),
@@ -54,7 +53,12 @@ async def test_create_list_update_delete(auth_client, kind):
 
 
 async def test_selectors_require_a_session(client):
-    assert (await client.get(f"{BASE}/positions")).status_code == 401
+    assert (await client.get(f"{BASE}/companies")).status_code == 401
+
+
+async def test_there_is_no_positions_list_any_more(auth_client):
+    """Testimonials name a development field or a technology instead ("Python development")."""
+    assert (await auth_client.get(f"{BASE}/positions")).status_code == 404
 
 
 async def test_icons_are_sanitized_on_save(auth_client):
@@ -67,7 +71,7 @@ async def test_icons_are_sanitized_on_save(auth_client):
 @pytest.mark.parametrize(
     ("kind", "payload", "loc"),
     [
-        ("positions", {"name": {"en": "Dev", "ru": "", "tg": "Dev"}}, ["body", "name", "ru"]),
+        ("development-fields", {"name": {"en": "Dev", "ru": "", "tg": "Dev"}}, ["body", "name", "ru"]),
         ("product-types", {"name": i18n("Web"), "icon_svg": "<html/>"}, ["body", "icon_svg"]),
         ("product-types", {"name": i18n("Web")}, ["body", "icon_svg"]),
         ("tech-stacks", {"name": "Go", "icon_svg": ICON, "color": "blue"}, ["body", "color"]),
@@ -88,8 +92,8 @@ async def test_names_must_be_unique_ignoring_case(auth_client):
     assert response.status_code == 422
     assert response.json()["detail"][0]["loc"] == ["body", "name"]
 
-    await create(auth_client, "positions", {"name": i18n("Mobile developer")})
-    response = await auth_client.post(f"{BASE}/positions", json={"name": i18n("MOBILE DEVELOPER")})
+    await create(auth_client, "development-fields", {"name": i18n("Mobile development")})
+    response = await auth_client.post(f"{BASE}/development-fields", json={"name": i18n("MOBILE DEVELOPMENT")})
     assert response.json()["detail"][0]["loc"] == ["body", "name", "en"]
 
 
@@ -144,13 +148,14 @@ async def test_items_in_use_cannot_be_deleted(auth_client):
 
 
 async def test_reorder(auth_client):
-    ids = [(await create(auth_client, "positions", {"name": i18n(f"Role {n}")}))["id"] for n in range(3)]
+    kind = "development-fields"
+    ids = [(await create(auth_client, kind, {"name": i18n(f"Field {n}")}))["id"] for n in range(3)]
     new_order = [ids[2], ids[0], ids[1]]
-    response = await auth_client.put(f"{BASE}/positions/order", json={"ids": new_order})
+    response = await auth_client.put(f"{BASE}/{kind}/order", json={"ids": new_order})
     assert response.status_code == 204
-    assert [p["id"] for p in (await auth_client.get(f"{BASE}/positions")).json()] == new_order
+    assert [p["id"] for p in (await auth_client.get(f"{BASE}/{kind}")).json()] == new_order
     # Every item must be listed exactly once.
-    assert (await auth_client.put(f"{BASE}/positions/order", json={"ids": ids[:2]})).status_code == 422
+    assert (await auth_client.put(f"{BASE}/{kind}/order", json={"ids": ids[:2]})).status_code == 422
 
 
 async def test_company_logo_upload_link_and_replace(auth_client, storage_dir):

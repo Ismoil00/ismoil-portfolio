@@ -28,6 +28,7 @@ Progress is tracked in [`PROGRESS.md`](../PROGRESS.md) — read it first when re
 | 17 | Contact form | Rate limit: 5 messages per IP (salted hash, counted in the DB) and 30 in total per hour; hidden honeypot field, length limits, same validation on both sides. |
 | 18 | Scope | Monolith, no cache layer, no microservices. Docker comes later. |
 | 19 | Order of work | Foundation first, then **section by section**: backend tests → backend code → admin page, so every admin form is built on a real, tested API (nothing written twice against a mock). The public site switches over once all public endpoints exist. |
+| 20 | Testimonials: my role | Picked from **Development fields** or **Tech stacks** (exactly one; DB CHECK `ck_testimonials_one_role` + service). The site adds "development": EN "X development", RU "X Разработчик", TG "X Барномасоз" (`app/core/roles.py`); a name that already ends in "development" is shown as it is. There is no separate Positions list. |
 
 ## 2. Data model (PostgreSQL)
 
@@ -47,7 +48,6 @@ Months are stored as dates on the 1st (`2024-03-01`) and exchanged as `"YYYY-MM"
 - `development_fields`: name I18n, icon_svg?, filter_active, filter_position
 - `instruments`: name I18n, icon_svg?, filter_active, filter_position — "Languages & frameworks", "Tools"…
 - `tech_stacks`: name (unique), icon_svg, color, docs_url?, showcase_active, showcase_position; M2M → development_fields, instruments
-- `positions`: name I18n — my position (testimonials)
 - `companies`: name (unique), website_url?, logo_id?
 - `institutes`: name I18n, website_url?, logo_id?
 - `product_types`: name I18n, icon_svg
@@ -62,7 +62,7 @@ Months are stored as dates on the 1st (`2024-03-01`) and exchanged as `"YYYY-MM"
 - `other_links`: platform_id, url, position
 - `experiences`: title I18n, company_id, start_month, end_month?, is_current (unique index: only one true), description I18n (HTML); M2M → tech_stacks (≥ 1), development_fields, projects, testimonials
 - `projects`: slug (unique), title I18n, description I18n, start_month, end_month, client_kind (`self` | `private` | `company`), company_id?, traffic? (`under100` | `from100` | `from1k` | `from10k` | `from100k` | `over1m`), live_url?, repo_url?, is_private, cover_id?; M2M → product_types (≥ 1), tech_stacks (≥ 1), media
-- `testimonials`: author_name I18n, author_role I18n, company_id, position_id, given_on (date), quote I18n?, media_id?, verify_url; M2M → projects
+- `testimonials`: author_name I18n, author_role I18n, company_id, field_id? / tech_stack_id? (my role: exactly one), given_on (date), quote I18n?, media_id?, verify_url; M2M → projects
 - `certificates`: title I18n, institute_id, start_month, end_month, verify_url?; M2M → development_fields, media (1–5)
 - `contact_messages`: name, contact, message, created_at, ip_hash
 
@@ -102,7 +102,8 @@ Deleting a selector item or a project/testimonial that something still uses retu
 | Testimonials | thumbnail | optional: one image or one video |
 | | date | required |
 | | name, role | required, ≤ 100 |
-| | company, my position | required (selectors) |
+| | company | required (selector) |
+| | my role | required: a development field or a technology, exactly one (picking one clears the other) |
 | | quote | optional, ≤ 1000 |
 | | projects | optional, many |
 | | verify link | required |
@@ -134,7 +135,7 @@ Every URL: `http(s)` only, ≤ 2048. Dates can't be in the future; "to" can't be
 **Admin** (session + CSRF on writes)
 - `GET|PUT /admin/hero` · `GET|PUT /admin/about` · `GET|PUT /admin/contacts` · `GET|PUT /admin/tech-showcase`
 - `/admin/{experiences|projects|testimonials|certificates}`: list, create (`GET|POST /`), read, update, delete (`GET|PUT|DELETE /{id}`)
-- `/admin/selectors/{development-fields|instruments|tech-stacks|positions|companies|institutes|product-types|link-platforms}`
+- `/admin/selectors/{development-fields|instruments|tech-stacks|companies|institutes|product-types|link-platforms}`
   and `/admin/other-links`: list, create (`GET|POST /`), reorder (`PUT /order`), update, delete (`PUT|DELETE /{id}`)
 - `GET /admin/messages` · `DELETE /admin/messages/{id}`
 - `GET|PUT /admin/settings` (translator) · `PUT /admin/settings/password`
@@ -164,7 +165,7 @@ backend/
     repositories/   DB queries + integrations (storage, Claude API)
     core/           settings, security, errors, middleware
     db/             engine, session, base
-    cli.py          create-admin, delete-admin, seed, cleanup
+    cli.py          create-admin, delete-admin, seed, import-selectors, cleanup
   alembic/          migrations
   scripts/          one-time database setup (create_db.ps1 + .sql)
   seed/             content.json: the real content, loaded into an empty database

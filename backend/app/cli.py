@@ -3,6 +3,8 @@
 .venv/Scripts/python -m app.cli create-admin             create the admin user (or reset its password)
 .venv/Scripts/python -m app.cli delete-admin --email X   remove an admin user (and its sessions)
 .venv/Scripts/python -m app.cli cleanup                  delete unlinked uploads and expired auth records
+.venv/Scripts/python -m app.cli seed                     load the real content into an empty database
+.venv/Scripts/python -m app.cli import-selectors         add the seed's new development fields and technologies
 """
 
 import argparse
@@ -24,7 +26,7 @@ from app.repositories.media import MediaRepository
 from app.repositories.storage import create_storage
 from app.services.auth import AuthService, normalize_email
 from app.services.media import MediaService
-from app.services.seed import SeedError, load_seed
+from app.services.seed import SeedError, add_missing_selectors, load_seed
 
 
 @asynccontextmanager
@@ -82,6 +84,15 @@ async def seed(path: str) -> None:
     print("Seeded: selectors, Hero, About, Contacts, Tech stack, experience, projects and certificates.")
 
 
+async def import_selectors(path: str) -> None:
+    data = json.loads((BASE_DIR / path).read_text(encoding="utf-8"))
+    async with open_session() as session:
+        added = await add_missing_selectors(session, data)
+    for label, names in (("development field(s)", added.fields), ("technology(ies)", added.techs)):
+        print(f"Added {len(names)} {label}" + (f": {', '.join(names)}" if names else ""))
+    print("Nothing else was changed.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -92,6 +103,10 @@ def main() -> None:
     commands.add_parser("cleanup", help="delete unlinked uploads and expired auth records")
     seeding = commands.add_parser("seed", help="load the real content into an empty database")
     seeding.add_argument("--file", default="seed/content.json", help="relative to backend/")
+    importing = commands.add_parser(
+        "import-selectors", help="add the seed's development fields and technologies a filled database lacks"
+    )
+    importing.add_argument("--file", default="seed/content.json", help="relative to backend/")
     args = parser.parse_args()
 
     if args.command == "create-admin":
@@ -107,6 +122,8 @@ def main() -> None:
         asyncio.run(cleanup())
     elif args.command == "seed":
         asyncio.run(seed(args.file))
+    elif args.command == "import-selectors":
+        asyncio.run(import_selectors(args.file))
 
 
 if __name__ == "__main__":

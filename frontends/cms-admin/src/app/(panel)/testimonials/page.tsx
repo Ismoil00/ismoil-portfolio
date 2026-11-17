@@ -38,7 +38,7 @@ export default async function TestimonialsListPage() {
             subtitle={`${t.author_role.en} · ${t.company.name}`}
             badges={
               <>
-                <Badge>My position: {t.position.name.en}</Badge>
+                <Badge>My role: {t.role.en}</Badge>
                 {t.project_ids.length > 0 && <Badge>{plural(t.project_ids.length, "project", "projects")}</Badge>}
                 {!t.quote && <Badge tone="warning">No quote</Badge>}
               </>

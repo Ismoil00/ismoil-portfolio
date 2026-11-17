@@ -17,7 +17,6 @@ from app.models import (
     Experience,
     Institute,
     Media,
-    Position,
     ProductType,
     Project,
     TechStack,
@@ -250,7 +249,11 @@ class TestimonialService(_ContentService[Testimonial]):
         item = await self.get(item_id) if item_id else Testimonial()
         errors: Errors = []
         await self._ref(errors, "company_id", Company, data.company_id)
-        await self._ref(errors, "position_id", Position, data.position_id)
+        if (data.field_id is None) == (data.tech_stack_id is None):
+            message = "Choose only one" if data.field_id else "Choose a development field or a technology"
+            errors.append((("field_id",), message))
+        await self._ref(errors, "field_id", DevelopmentField, data.field_id)
+        await self._ref(errors, "tech_stack_id", TechStack, data.tech_stack_id)
         await self._refs(errors, "project_ids", Project, data.project_ids)
         if errors:
             raise FieldErrors(errors)
@@ -267,7 +270,8 @@ class TestimonialService(_ContentService[Testimonial]):
             "author_name",
             "author_role",
             "company_id",
-            "position_id",
+            "field_id",
+            "tech_stack_id",
             "given_on",
             "quote",
             "media_id",

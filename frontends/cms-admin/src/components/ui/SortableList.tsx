@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -43,6 +43,9 @@ export function SortableList<T extends { id: string }>({
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
+  // dnd-kit numbers its accessibility ids with a counter, which differs between the server render and
+  // the browser (a hydration mismatch); React's useId is the same on both.
+  const dndId = useId();
 
   function onDragEnd({ active, over }: DragEndEvent) {
     if (!over || active.id === over.id) return;
@@ -51,7 +54,7 @@ export function SortableList<T extends { id: string }>({
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd} modifiers={[restrictToParentElement]}>
+    <DndContext id={dndId} sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd} modifiers={[restrictToParentElement]}>
       <SortableContext items={items.map((i) => i.id)} strategy={layout === "grid" ? rectSortingStrategy : verticalListSortingStrategy}>
         <ul className={className}>
           {items.map((item, index) => (

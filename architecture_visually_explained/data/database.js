@@ -20,7 +20,7 @@ window.ARCH.database = {
     { label: "Sections (single rows)", group: "sections", tables: ["hero", "about", "contacts", "other_links"] },
     { label: "Content", group: "content", tables: ["experiences", "projects", "testimonials", "certificates", "contact_messages"] },
     { label: "Link tables (many-to-many)", group: "links", tables: ["experience_techs", "experience_fields", "experience_projects", "experience_testimonials", "project_types", "project_techs", "project_media", "testimonial_projects", "certificate_fields", "certificate_media"] },
-    { label: "Selectors (reusable lists)", group: "selectors", tables: ["companies", "tech_stacks", "product_types", "positions", "institutes", "link_platforms", "tech_stack_fields", "tech_stack_instruments", "development_fields", "instruments"] },
+    { label: "Selectors (reusable lists)", group: "selectors", tables: ["companies", "tech_stacks", "product_types", "institutes", "link_platforms", "tech_stack_fields", "tech_stack_instruments", "development_fields", "instruments"] },
     { label: "Files", group: "files", tables: ["media"] },
   ],
 
@@ -34,7 +34,7 @@ window.ARCH.database = {
     project_types: [640, 370], project_techs: [640, 440], project_media: [640, 510], testimonial_projects: [640, 640],
     certificate_fields: [640, 820], certificate_media: [640, 890],
     media: [640, 1010],
-    companies: [960, 60], tech_stacks: [960, 300], product_types: [960, 440], positions: [960, 620], institutes: [960, 880], link_platforms: [960, 1010],
+    companies: [960, 60], tech_stacks: [960, 300], product_types: [960, 440], institutes: [960, 880], link_platforms: [960, 1010],
     tech_stack_fields: [1260, 240], tech_stack_instruments: [1260, 360],
     development_fields: [1560, 180], instruments: [1560, 400],
   },
@@ -108,7 +108,7 @@ window.ARCH.database = {
     },
     testimonials: {
       group: "content",
-      what: "A recommendation: author name and role in 3 languages, company, my position then, date, optional quote, optional image or video, verify link; can mention several projects.",
+      what: "A recommendation: author name and role in 3 languages, company, my role then (exactly one: a development field or a technology, shown with \"development\" added: \"Python development\" · \"Python Разработчик\" · \"Python Барномасоз\"), date, optional quote, optional image or video, verify link; can mention several projects.",
       managedBy: ["services/content.py · TestimonialService", "repositories/content.py · links.py", "services/public.py (site reads)"],
       shownIn: ["Admin: /testimonials", "Site: home Testimonials, /testimonials (hidden while none)"],
     },
@@ -142,12 +142,6 @@ window.ARCH.database = {
       managedBy: ["services/selectors.py · SelectorService", "repositories/selectors.py"],
       shownIn: ["Admin: /selectors, Certificates picker", "Site: certificate cards"],
     },
-    positions: {
-      group: "selectors",
-      what: "Positions I held, in 3 languages: \"My position\" on testimonials.",
-      managedBy: ["services/selectors.py · SelectorService", "repositories/selectors.py"],
-      shownIn: ["Admin: /selectors, Testimonials picker", "Site: testimonial cards"],
-    },
     product_types: {
       group: "selectors",
       what: "What a project is (Web, Mobile, Game…), with an icon. Every project needs at least one.",
@@ -158,13 +152,13 @@ window.ARCH.database = {
       group: "selectors",
       what: "Technologies: name (unique), icon, brand color, docs link. showcase_active / showcase_position decide what the site's Tech stack section shows; development fields and instruments are its filters.",
       managedBy: ["services/selectors.py · SelectorService", "services/sections.py · TechShowcaseService", "repositories/selectors.py"],
-      shownIn: ["Admin: /selectors, /tech-stack, pickers", "Site: Skills section, chips on every card, filters"],
+      shownIn: ["Admin: /selectors, /tech-stack, pickers (incl. \"My role\" on testimonials)", "Site: Skills section, chips on every card, filters, \"My role\" on testimonial cards"],
     },
     development_fields: {
       group: "selectors",
-      what: "Directions of IT (Backend, AI & LLM…) in 3 languages: filters on /experience and /certificates (\"field of study\") and on the Tech stack section. filter_active / filter_position control the filter.",
+      what: "Directions of IT (Backend, AI & LLM…) in 3 languages: filters on /experience and /certificates (\"field of study\") and on the Tech stack section, and \"My role\" on testimonials. filter_active / filter_position control the filter.",
       managedBy: ["services/selectors.py · SelectorService", "repositories/selectors.py"],
-      shownIn: ["Admin: /selectors, /tech-stack, pickers", "Site: filters"],
+      shownIn: ["Admin: /selectors, /tech-stack, pickers (incl. \"My role\" on testimonials)", "Site: filters, \"My role\" on testimonial cards"],
     },
     instruments: {
       group: "selectors",
@@ -205,6 +199,7 @@ window.ARCH.database = {
     ck_experiences_current_has_no_end: "A current job has no end month; a past job must have one.",
     ck_experiences_end_after_start: "The end month, when set, can't be before the start month.",
     ck_certificates_end_after_start: "The end month can't be before the start month.",
+    ck_testimonials_one_role: "My role is exactly one: a development field or a technology (field_id or tech_stack_id, never both, never neither).",
   },
 
   onDelete: {
@@ -214,13 +209,13 @@ window.ARCH.database = {
   },
 
   objects: [
-    { name: "Tables", count: 35, text: "34 from the models + alembic_version." },
+    { name: "Tables", count: 34, text: "33 from the models + alembic_version." },
     { name: "Functions", count: 0, text: "Business rules live in the backend's services: one place, tested in Python." },
     { name: "Triggers", count: 0, text: "updated_at is set by SQLAlchemy on every update (onupdate=now()); the database does nothing behind the code's back." },
     { name: "Views", count: 0, text: "The public site's read queries are built in repositories/public.py." },
     { name: "Custom types / enums", count: 0, text: "Fixed lists are VARCHAR + a CHECK rule (values in app/models/enums.py), so adding a value is a small migration." },
     { name: "Sequences", count: 4, text: "hero_id_seq, about_id_seq, contacts_id_seq, admin_settings_id_seq for the four single-row tables. Every other table uses a UUID made in Python (uuid4)." },
-    { name: "Indexes", count: 70, text: "35 primary keys, 13 unique (12 constraints + the one-current-job rule), 19 on foreign keys, 3 for time windows: login_attempts (ip_hash, created_at), contact_messages (ip_hash, created_at) and (created_at)." },
+    { name: "Indexes", count: 70, text: "34 primary keys, 13 unique (12 constraints + the one-current-job rule), 20 on foreign keys, 3 for time windows: login_attempts (ip_hash, created_at), contact_messages (ip_hash, created_at) and (created_at)." },
     { name: "Extensions", count: 1, text: "plpgsql only (built into PostgreSQL)." },
   ],
 
@@ -232,6 +227,6 @@ window.ARCH.database = {
     ["Timestamps", "created_at and updated_at default to now(); updated_at is refreshed by SQLAlchemy."],
     ["Ordered lists", "Every link table has a position, so picked lists keep their order."],
     ["Constraint names", "pk_<table>, fk_<table>_<column>_<target>, uq_<table>_<column>, ck_<table>_<rule>, ix_<table>_<column> (set in app/db/base.py so migrations can find them)."],
-    ["Migrations", "Alembic: f7e7e155e0e8 initial schema → 4e6924f14a2d seeded rows may lack traffic and verify_url → ba844e7ce9b0 admin_settings (head)."],
+    ["Migrations", "Alembic: f7e7e155e0e8 initial schema → 4e6924f14a2d seeded rows may lack traffic and verify_url → ba844e7ce9b0 admin_settings → a5b16569363c testimonial role is a field or a technology, positions dropped (head)."],
   ],
 };

@@ -28,10 +28,6 @@ class TechStackIn(InputModel):
     instrument_ids: UniqueIds() = []
 
 
-class PositionIn(InputModel):
-    name: I18nRequired[100]
-
-
 class CompanyIn(InputModel):
     name: Line[100]
     website_url: OptionalHttpUrl = None
@@ -85,10 +81,6 @@ class TechStackOut(SelectorOut):
     docs_url: str | None
     field_ids: list[uuid.UUID]
     instrument_ids: list[uuid.UUID]
-
-
-class PositionOut(SelectorOut):
-    name: dict[str, str]
 
 
 class CompanyOut(SelectorOut):

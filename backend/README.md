@@ -43,6 +43,7 @@ Real environment variables (Docker, hosting panel) override `.env`, so a server 
 | `.venv/Scripts/python -m app.cli create-admin` | Create the admin user, or reset its password (when signed in, the admin's Settings page changes it too) |
 | `.venv/Scripts/python -m app.cli delete-admin --email <email>` | Remove an admin user |
 | `.venv/Scripts/python -m app.cli seed` | Load `seed/content.json` into an empty database (refuses otherwise) |
+| `.venv/Scripts/python -m app.cli import-selectors` | Add the development fields and technologies of `seed/content.json` that a filled database doesn't have yet (matched by name in any letter case; nothing is changed or deleted; safe to run again) |
 | `.venv/Scripts/python -m app.cli cleanup` | Delete uploads nothing uses after 24 h, old login attempts and expired sessions; run it on a schedule once deployed |
 
 Database changes: edit the models in `app/models/`, then `.venv/Scripts/alembic revision --autogenerate -m "what changed"`,

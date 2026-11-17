@@ -125,18 +125,21 @@ async def test_certificates_and_testimonials(client, seeded, auth_client):
     assert (await client.get(f"{P}/testimonials", params={"lang": "en"})).json() == {"items": [], "total": 0}
 
     company = await f.company(auth_client, "Quanta")
-    position = await f.position(auth_client, "Mentor")
+    techs = (await auth_client.get("/api/v1/admin/selectors/tech-stacks")).json()
+    tech = next(t for t in techs if t["name"] == "Rust")  # from the seed
     projects = (await auth_client.get("/api/v1/admin/projects")).json()
     body = {
         "author_name": f.i18n("Daniel Brooks"), "author_role": f.i18n("CTO"), "company_id": company["id"],
-        "position_id": position["id"], "given_on": "2025-04-10", "quote": None, "media_id": None,
+        "field_id": None, "tech_stack_id": tech["id"], "given_on": "2025-04-10", "quote": None, "media_id": None,
         "verify_url": "https://www.linkedin.com/in/someone", "project_ids": [projects[0]["id"]],
     }  # fmt: skip
     assert (await auth_client.post("/api/v1/admin/testimonials", json=body)).status_code == 201
     page = (await client.get(f"{P}/testimonials", params={"lang": "ru"})).json()
     item = page["items"][0]
     assert item["author"] == "Daniel Brooks (ru)" and item["quote"] is None and item["media"] is None
-    assert item["date"] == "2025-04-10" and item["myPosition"] == "Mentor (ru)"
+    assert item["date"] == "2025-04-10" and item["myRole"] == "Rust Разработчик"
+    english = (await client.get(f"{P}/testimonials", params={"lang": "en"})).json()["items"][0]
+    assert english["myRole"] == "Rust development"
     assert item["projects"][0]["href"].startswith("/projects/")
     filters = (await client.get(f"{P}/testimonials/filters")).json()
     assert filters == {"minDate": "2025-04", "maxDate": "2025-04"}

@@ -1,6 +1,7 @@
 """The architecture site's database data is generated from the models and must match them.
 
-When a model changes, run:  .venv/Scripts/python scripts/export_architecture_db.py
+Runs only on its own:  .venv/Scripts/python -m pytest tests_architecture
+After a model change:  .venv/Scripts/python scripts/export_architecture_db.py
 """
 
 import importlib.util

@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
 
 /**
- * Small text bubble above (or to the right of) an element, shown on hover and on keyboard focus
+ * Small text bubble above, left or right of an element, shown on hover and on keyboard focus
  * (CSS only, so it works in server components). The element itself should carry the same text
  * as aria-label — the bubble is visual only.
  * `align` (above only) decides which edge the bubble lines up with, so it never sticks out of a
- * card. `side="right"` is for elements at the screen's left edge, like the side rail.
+ * card. `side="right"` is for elements at the screen's left edge, like the side rail; `side="left"`
+ * for buttons at the end of a row inside a clipped list, where a bubble above would be cut off.
  */
 export function Tooltip({
   label,
@@ -17,13 +18,15 @@ export function Tooltip({
   label: string;
   children: ReactNode;
   align?: "start" | "center" | "end";
-  side?: "top" | "right";
+  side?: "top" | "right" | "left";
   className?: string;
 }) {
   const position =
     side === "right"
       ? "left-full top-1/2 ml-2 -translate-x-1 -translate-y-1/2 group-hover/tip:translate-x-0 group-has-[:focus-visible]/tip:translate-x-0"
-      : `bottom-full mb-2 translate-y-1 group-hover/tip:translate-y-0 group-has-[:focus-visible]/tip:translate-y-0 ${
+      : side === "left"
+        ? "right-full top-1/2 mr-2 translate-x-1 -translate-y-1/2 group-hover/tip:translate-x-0 group-has-[:focus-visible]/tip:translate-x-0"
+        : `bottom-full mb-2 translate-y-1 group-hover/tip:translate-y-0 group-has-[:focus-visible]/tip:translate-y-0 ${
           align === "start" ? "left-0" : align === "end" ? "right-0" : "left-1/2 -translate-x-1/2"
         }`;
   return (

@@ -83,6 +83,12 @@
   mix-blend-mode: normal;
 }
 
+/* Keep room for the scrollbar on every page, so the content doesn't jump sideways when a page
+   becomes long enough to scroll (e.g. switching between short and long Selectors lists). */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-fg);

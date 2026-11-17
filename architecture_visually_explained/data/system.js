@@ -96,6 +96,7 @@ window.ARCH.system = {
         "alembic upgrade head: creates or changes the tables (migrations in backend/alembic/versions).",
         "create-admin / delete-admin: the one admin user.",
         "seed: loads seed/content.json into an empty database and uploads the résumé.",
+        "import-selectors: adds the seed's new development fields and technologies to a filled database (by name; nothing changed or deleted).",
         "cleanup: deletes uploads nothing uses after 24 h, old login attempts and expired sessions.",
       ],
     },

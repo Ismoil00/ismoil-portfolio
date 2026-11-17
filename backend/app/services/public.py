@@ -6,6 +6,7 @@ from datetime import UTC, date, datetime
 from app.core.contacts import channel_link
 from app.core.errors import NotFound, ServiceUnavailable
 from app.core.places import utc_offset_label
+from app.core.roles import role_label
 from app.core.text import date_to_month
 from app.models import Certificate, Company, Experience, Institute, Media, Project, TechStack, Testimonial
 from app.repositories.public import ListQuery, PublicRepository
@@ -311,7 +312,7 @@ class PublicService:
             author=tr(t.author_name, lang) or "",
             role=tr(t.author_role, lang) or "",
             company=self.organization(t.company, lang),
-            my_position=tr(t.my_position.name, lang) or "",
+            my_role=role_label((t.field or t.tech_stack).name)[lang],
             date=t.given_on.isoformat(),
             quote=tr(t.quote, lang),
             media=self.media_item(t.media) if t.media else None,

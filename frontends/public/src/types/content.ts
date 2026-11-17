@@ -167,8 +167,8 @@ export interface Testimonial {
   author: string;
   role: string;
   company: Organization;
-  /** My position at that company at the time. */
-  myPosition: string;
+  /** My role there: a development field or a technology, e.g. "Frontend development". */
+  myRole: string;
   /** "YYYY-MM-DD" */
   date: string;
   quote: string | null;

@@ -1,8 +1,10 @@
 """Loads backend/seed/content.json (the site's real content, exported once from the old static data)
-into an empty database. Seeded rows go through the same cleaning as admin input (SVGs, rich text)."""
+into an empty database. Seeded rows go through the same cleaning as admin input (SVGs, rich text).
+`add_missing_selectors` brings later additions to the seed's selector lists into a filled database."""
 
 import io
 import uuid
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -24,7 +26,6 @@ from app.models import (
     Instrument,
     LinkPlatform,
     OtherLink,
-    Position,
     ProductType,
     Project,
     TechStack,
@@ -105,7 +106,6 @@ async def load_seed(session: AsyncSession, media: MediaService, data: dict[str, 
         ],
     )
     add_all("companies", [(c["key"], Company(name=c["name"])) for c in data["companies"]])
-    add_all("positions", [(p["key"], Position(name=p["name"])) for p in data["positions"]])
     add_all("institutes", [(i["key"], Institute(name=i["name"])) for i in data["institutes"]])
     await session.flush()
 
@@ -253,3 +253,72 @@ async def load_seed(session: AsyncSession, media: MediaService, data: dict[str, 
         )
 
     await session.commit()
+
+
+@dataclass
+class AddedSelectors:
+    fields: list[str] = field(default_factory=list)
+    techs: list[str] = field(default_factory=list)
+
+
+def _key(name: str) -> str:
+    # The same rule as the Selectors page: names are unique in any letter case.
+    return name.strip().lower()
+
+
+async def add_missing_selectors(session: AsyncSession, data: dict[str, Any]) -> AddedSelectors:
+    """Adds the seed's development fields and technologies that have no item of the same (English)
+    name yet. What is in the database is never changed or deleted; new items go after it, and new
+    technologies aren't shown on the Tech stack page until they are picked there."""
+    fields = list(await session.scalars(select(DevelopmentField)))
+    techs = list(await session.scalars(select(TechStack)))
+    instruments = list(await session.scalars(select(Instrument)))
+    field_ids = {_key(f.name["en"]): f.id for f in fields}
+    instrument_ids = {_key(i.name["en"]): i.id for i in instruments}
+    tech_names = {_key(t.name) for t in techs}
+    added = AddedSelectors()
+
+    position = max((f.position for f in fields), default=-1) + 1
+    for item in data["development_fields"]:
+        if _key(item["name"]["en"]) in field_ids:
+            continue
+        row = DevelopmentField(id=uuid.uuid4(), name=item["name"], icon_svg=_svg(item["icon_svg"]), position=position)
+        session.add(row)
+        field_ids[_key(item["name"]["en"])] = row.id
+        added.fields.append(item["name"]["en"])
+        position += 1
+    await session.flush()
+
+    # A technology links to fields and instruments by seed key; the database knows them by name.
+    seed_fields = {f["key"]: _key(f["name"]["en"]) for f in data["development_fields"]}
+    seed_instruments = {i["key"]: _key(i["name"]["en"]) for i in data["instruments"]}
+
+    def ids(keys: list[str], names: dict[str, str], known: dict[str, uuid.UUID]) -> list[uuid.UUID]:
+        return [known[names[k]] for k in keys if k in names and names[k] in known]  # missing ones are skipped
+
+    position = max((t.position for t in techs), default=-1) + 1
+    for item in data["tech_stacks"]:
+        if _key(item["name"]) in tech_names:
+            continue
+        row = TechStack(
+            id=uuid.uuid4(),
+            name=item["name"],
+            icon_svg=sanitize_svg(item["icon_svg"]),
+            color=item["color"].upper(),
+            docs_url=item["docs_url"],
+            position=position,
+        )
+        session.add(row)
+        await session.flush()
+        field_links = ids(item["fields"], seed_fields, field_ids)
+        instrument_links = ids(item["instruments"], seed_instruments, instrument_ids)
+        await replace_links(session, links.tech_stack_fields, "tech_stack_id", row.id, "field_id", field_links)
+        await replace_links(
+            session, links.tech_stack_instruments, "tech_stack_id", row.id, "instrument_id", instrument_links
+        )
+        tech_names.add(_key(item["name"]))
+        added.techs.append(item["name"])
+        position += 1
+
+    await session.commit()
+    return added

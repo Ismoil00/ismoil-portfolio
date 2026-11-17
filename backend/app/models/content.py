@@ -10,7 +10,7 @@ from app.db.base import Base, I18nDict, Timestamps, UUIDPk
 from app.models import links
 from app.models.enums import ClientKind, Traffic, sql_in
 from app.models.media import Media
-from app.models.selectors import Company, DevelopmentField, Institute, Position, ProductType, TechStack
+from app.models.selectors import Company, DevelopmentField, Institute, ProductType, TechStack
 
 
 def _ordered(secondary, target):  # view-only link, ordered by position
@@ -77,19 +77,30 @@ class Project(UUIDPk, Timestamps, Base):
 
 
 class Testimonial(UUIDPk, Timestamps, Base):
+    """A recommendation. My role then is a development field or a technology, shown with "development"
+    added ("Frontend development", "Python development")."""
+
     __tablename__ = "testimonials"
+    __table_args__ = (CheckConstraint("(field_id IS NULL) <> (tech_stack_id IS NULL)", name="one_role"),)
 
     author_name: Mapped[I18nDict]
     author_role: Mapped[I18nDict]
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id", ondelete="RESTRICT"), index=True)
-    position_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("positions.id", ondelete="RESTRICT"), index=True)
+    # My role: exactly one of these two.
+    field_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("development_fields.id", ondelete="RESTRICT"), index=True
+    )
+    tech_stack_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("tech_stacks.id", ondelete="RESTRICT"), index=True
+    )
     given_on: Mapped[date] = mapped_column(Date)
     quote: Mapped[I18nDict | None]
     media_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("media.id", ondelete="RESTRICT"), unique=True)
     verify_url: Mapped[str] = mapped_column(String(2048))
 
     company: Mapped[Company] = relationship(lazy="joined")
-    my_position: Mapped[Position] = relationship(lazy="joined")
+    field: Mapped[DevelopmentField | None] = relationship(lazy="joined")
+    tech_stack: Mapped[TechStack | None] = relationship(lazy="joined")
     media: Mapped[Media | None] = relationship(lazy="joined")
     projects: Mapped[list[Project]] = _ordered(links.testimonial_projects, Project)
 

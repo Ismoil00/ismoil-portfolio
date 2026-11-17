@@ -64,6 +64,11 @@ class NamedRef(OutputModel):
     name: dict[str, str]
 
 
+class TechRef(OutputModel):
+    id: uuid.UUID
+    name: str
+
+
 class InstituteRef(NamedRef):
     website_url: str | None
     logo_url: str | None = None
@@ -149,7 +154,9 @@ class TestimonialIn(InputModel):
     author_name: I18nRequired[100]
     author_role: I18nRequired[100]
     company_id: uuid.UUID
-    position_id: uuid.UUID
+    # My role: a development field or a technology, exactly one (the service checks it).
+    field_id: uuid.UUID | None = None
+    tech_stack_id: uuid.UUID | None = None
     given_on: Annotated[date, AfterValidator(_not_future)]
     quote: OptionalParagraphs1000 = None
     media_id: uuid.UUID | None = None
@@ -162,7 +169,9 @@ class TestimonialOut(OutputModel):
     author_name: dict[str, str]
     author_role: dict[str, str]
     company: CompanyRef
-    position: NamedRef
+    field: NamedRef | None
+    tech_stack: TechRef | None
+    role: dict[str, str]  # how it reads on the site: "Frontend development" per language
     given_on: date
     quote: dict[str, str] | None
     media: MediaOut | None

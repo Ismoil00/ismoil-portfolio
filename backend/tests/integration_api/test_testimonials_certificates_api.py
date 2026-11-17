@@ -12,12 +12,16 @@ EXPERIENCES = "/api/v1/admin/experiences"
 
 async def make_testimonial(client, **overrides) -> dict:
     company = overrides.pop("company", None) or await f.company(client, "Pixel Forge")
-    position = overrides.pop("position", None) or await f.position(client)
+    # My role there: a development field or a technology (exactly one). Default: a new "Frontend" field.
+    field, tech = overrides.pop("field", None), overrides.pop("tech", None)
+    if field is None and tech is None:
+        field = await f.field(client, "Frontend")
     return {
         "author_name": f.i18n("Timur Saidov"),
         "author_role": f.i18n("Studio Director"),
         "company_id": company["id"],
-        "position_id": position["id"],
+        "field_id": field["id"] if field else None,
+        "tech_stack_id": tech["id"] if tech else None,
         "given_on": "2020-01-15",
         "quote": f.i18n("He carried a huge part of it."),
         "media_id": None,
@@ -34,7 +38,12 @@ async def test_testimonial_crud_with_media(auth_client, storage_dir):
     assert created.status_code == 201, created.text
     item = created.json()
     assert item["company"]["name"] == "Pixel Forge"
-    assert item["position"]["name"]["en"] == "Full-stack developer"
+    assert item["field"]["name"]["en"] == "Frontend" and item["tech_stack"] is None
+    assert item["role"] == {
+        "en": "Frontend development",
+        "ru": "Frontend (ru) Разработчик",
+        "tg": "Frontend (tg) Барномасоз",
+    }
     assert item["media"]["id"] == photo["id"]
     assert item["given_on"] == "2020-01-15"
 
@@ -56,7 +65,8 @@ async def test_testimonial_crud_with_media(auth_client, storage_dir):
         ({"author_name": f.i18n("x" * 101)}, ["body", "author_name", "en"]),
         ({"quote": f.i18n("x" * 1001)}, ["body", "quote", "en"]),
         ({"company_id": None}, ["body", "company_id"]),
-        ({"position_id": None}, ["body", "position_id"]),
+        ({"field_id": None}, ["body", "field_id"]),  # neither a field nor a technology
+        ({"field_id": "00000000-0000-4000-8000-000000000000"}, ["body", "field_id"]),
     ],
 )
 async def test_testimonial_validation(auth_client, override, loc):
@@ -65,17 +75,57 @@ async def test_testimonial_validation(auth_client, override, loc):
     assert loc in [e["loc"] for e in response.json()["detail"]], response.json()
 
 
+async def test_my_role_is_a_field_or_a_technology_never_both(auth_client):
+    python, company = await f.tech(auth_client, "Python"), await f.company(auth_client)
+    by_tech = await auth_client.post(
+        TESTIMONIALS, json=await make_testimonial(auth_client, company=company, tech=python)
+    )
+    assert by_tech.status_code == 201, by_tech.text
+    item = by_tech.json()
+    assert item["field"] is None and item["tech_stack"]["name"] == "Python"
+    assert item["role"] == {"en": "Python development", "ru": "Python Разработчик", "tg": "Python Барномасоз"}
+
+    backend = await f.field(auth_client, "Backend")
+    both = await auth_client.post(
+        TESTIMONIALS, json=await make_testimonial(auth_client, company=company, tech=python, field=backend)
+    )
+    assert both.status_code == 422
+    assert both.json()["detail"][0]["loc"] == ["body", "field_id"]
+
+
+async def test_names_that_already_say_development_get_nothing_added(auth_client):
+    games = await f.post(
+        auth_client,
+        "/selectors/development-fields",
+        {"name": {"en": "Game development", "ru": "Геймдев", "tg": "Бозисозӣ"}},
+    )
+    item = (await auth_client.post(TESTIMONIALS, json=await make_testimonial(auth_client, field=games))).json()
+    assert item["role"] == {"en": "Game development", "ru": "Геймдев", "tg": "Бозисозӣ"}
+
+
+async def test_a_field_or_technology_named_in_a_testimonial_cannot_be_deleted(auth_client):
+    python, backend, company = await f.tech(auth_client), await f.field(auth_client), await f.company(auth_client)
+    for role in ({"tech": python}, {"field": backend}):
+        body = await make_testimonial(auth_client, company=company, **role)
+        assert (await auth_client.post(TESTIMONIALS, json=body)).status_code == 201
+
+    tech_delete = await auth_client.delete(f"/api/v1/admin/selectors/tech-stacks/{python['id']}")
+    field_delete = await auth_client.delete(f"/api/v1/admin/selectors/development-fields/{backend['id']}")
+    assert (tech_delete.status_code, tech_delete.json()["usage"]) == (409, {"testimonials": 1})
+    assert (field_delete.status_code, field_delete.json()["usage"]) == (409, {"testimonials": 1})
+
+
 async def test_quote_is_optional_and_media_kind_is_checked(auth_client):
     company = await f.company(auth_client, "Quanta")
-    position = await f.position(auth_client)
+    field = await f.field(auth_client)
     ok = await auth_client.post(
-        TESTIMONIALS, json=await make_testimonial(auth_client, company=company, position=position, quote=None)
+        TESTIMONIALS, json=await make_testimonial(auth_client, company=company, field=field, quote=None)
     )
     assert ok.status_code == 201
     shot = await f.upload(auth_client, "project_image")
     wrong = await auth_client.post(
         TESTIMONIALS,
-        json=await make_testimonial(auth_client, company=company, position=position, media_id=shot["id"]),
+        json=await make_testimonial(auth_client, company=company, field=field, media_id=shot["id"]),
     )
     assert wrong.json()["detail"][0]["loc"] == ["body", "media_id"]
 
