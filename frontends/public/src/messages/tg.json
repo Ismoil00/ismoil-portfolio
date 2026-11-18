@@ -102,6 +102,8 @@
     "liveHint": "Деморо дар ҷадвали нав кушодан",
     "liveClosed": "Демо дастрас нест",
     "open": "Кушодани лоиҳа: {name}",
+    "playVideo": "Тамошои видеои лоиҳаи «{name}»",
+    "openImage": "Кушодани тасвири лоиҳаи «{name}» дар тамоми экран",
     "viewAll": "Ҳамаи лоиҳаҳо",
     "viewAllCount": "{count} лоиҳа",
     "inDevelopment": "Дар ҳоли таҳия"
@@ -179,6 +181,12 @@
     "clear": "Тоза кардан",
     "prevYear": "Соли гузашта",
     "nextYear": "Соли оянда",
+    "prevYears": "12 соли гузашта",
+    "nextYears": "12 соли оянда",
+    "chooseYear": "Интихоби сол",
+    "openCalendar": "Кушодани тақвим",
+    "calendar": "Тақвим",
+    "typeHint": "Ё ворид кунед: 03.2024 ё мар. 2024",
     "showing": "{shown} аз {total} нишон дода шуд",
     "loadMore": "Боз {count} нишон додан",
     "loading": "Бор шуда истодааст…"

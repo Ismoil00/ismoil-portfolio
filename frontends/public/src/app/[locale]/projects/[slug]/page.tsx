@@ -10,7 +10,6 @@ import { Link } from "@/i18n/navigation";
 import { getProject } from "@/api/projects.api";
 import { getProfile } from "@/api/content.api";
 import { Container } from "@/components/ui/Container";
-import { RichText } from "@/components/ui/RichText";
 import { TechChip } from "@/components/tech/TechChip";
 import { ProjectLinks } from "@/components/projects/ProjectLinks";
 import { SvgIcon } from "@/components/ui/SvgIcon";
@@ -182,13 +181,8 @@ export default async function ProjectPage({ params }: Props) {
         {/* 7. Description */}
         <section className="mt-12 border-t border-line pt-8">
           <h2 className="font-display text-[11px] uppercase tracking-[0.18em] text-subtle">{t("about")}</h2>
-          <div className="mt-4 max-w-3xl space-y-4 text-lg leading-relaxed text-muted">
-            {project.description.map((paragraph) => (
-              <p key={paragraph}>
-                <RichText text={paragraph} />
-              </p>
-            ))}
-          </div>
+          {/* Sanitized by the backend (allow-list) when it was saved in the admin. */}
+          <div className="rich-text mt-4 max-w-3xl text-lg leading-relaxed text-muted" dangerouslySetInnerHTML={{ __html: project.description }} />
         </section>
       </Container>
     </article>

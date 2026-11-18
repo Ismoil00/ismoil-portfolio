@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/form/Choice";
 import { Field, TextInput } from "@/components/form/Field";
 import { I18nField } from "@/components/form/I18nField";
 import { MediaGallery } from "@/components/form/MediaGallery";
-import { MonthField } from "@/components/form/MonthField";
+import { DateField } from "@/components/form/DateField";
 import { MultiPickField } from "@/components/form/MultiPickField";
 import { companyOptions, techOptions, typeOptions } from "@/components/form/options";
 import { Picker } from "@/components/form/Picker";
@@ -37,7 +37,7 @@ const schema = z
   .object({
     title: i18nRequired(200),
     slug: z.string().trim().max(120).refine((v) => v === "" || /^[a-z0-9]+(-[a-z0-9]+)*$/.test(v), "Lowercase letters, digits and single hyphens only"),
-    description: i18nRequired(5000, "multiline"),
+    description: i18nRequired(5000, "rich"),
     start: month(),
     end: month(),
     client: z.string().min(1, "Choose who it was built for"),
@@ -176,7 +176,7 @@ export function ProjectForm({
                 <input id="project-slug" {...register("slug")} placeholder={slugify(titleEn ?? "") || "design-tokens-plugin"} className="w-full bg-transparent px-1 py-2.5 text-sm outline-none placeholder:text-faint" spellCheck={false} />
               </div>
             </Field>
-            <I18nField name="description" label="Description" kind="multiline" rows={8} required max={5000} hint="A blank line starts a new paragraph; **text** is emphasized." />
+            <I18nField name="description" label="Description" kind="rich" required max={5000} hint="Format with the toolbar: bold, italic, underline, lists, links." />
           </div>
         </Card>
 
@@ -204,8 +204,8 @@ export function ProjectForm({
               control={control}
               name="start"
               render={({ field, fieldState }) => (
-                <Field label="From" required error={fieldState.error?.message}>
-                  <MonthField value={field.value} onChange={field.onChange} max={currentMonth()} invalid={Boolean(fieldState.error)} />
+                <Field htmlFor="project-start" label="From" required error={fieldState.error?.message}>
+                  <DateField id="project-start" value={field.value} onChange={field.onChange} max={currentMonth()} invalid={Boolean(fieldState.error)} />
                 </Field>
               )}
             />
@@ -213,8 +213,8 @@ export function ProjectForm({
               control={control}
               name="end"
               render={({ field, fieldState }) => (
-                <Field label="To" required error={fieldState.error?.message}>
-                  <MonthField value={field.value} onChange={field.onChange} min={start} max={currentMonth()} invalid={Boolean(fieldState.error)} />
+                <Field htmlFor="project-end" label="To" required error={fieldState.error?.message}>
+                  <DateField id="project-end" value={field.value} onChange={field.onChange} min={start} max={currentMonth()} invalid={Boolean(fieldState.error)} />
                 </Field>
               )}
             />
@@ -279,7 +279,7 @@ export function ProjectForm({
           </div>
         </Card>
 
-        <Card title="Gallery" description="Up to 10 images and 2 videos. The star picks the card's cover (default: the first image).">
+        <Card title="Gallery" description="Up to 10 images and 2 videos. Click a file to view it full size. The star picks the card's cover, an image or a video (default: the first image); a video cover plays right from the card on the site.">
           <Controller
             control={control}
             name="media"

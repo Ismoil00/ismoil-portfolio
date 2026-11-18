@@ -1,11 +1,13 @@
 """Selectors: the reusable lists the other pages pick from (Selectors page in the admin panel).
 
-`position` orders each list in the admin panel's dropdowns.
+`position` orders each list in the admin panel's dropdowns. Names are unique ignoring letter case:
+the Selectors page checks it first, and the database refuses a second one anyway (for the lists with
+names in 3 languages, the English name counts).
 """
 
 import uuid
 
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import ForeignKey, Index, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, I18nDict, Timestamps, UUIDPk
@@ -13,11 +15,16 @@ from app.models.links import tech_stack_fields, tech_stack_instruments
 from app.models.media import Media
 
 
+def _unique_english_name(table: str) -> Index:
+    return Index(f"uq_{table}_name_en", text("lower(name ->> 'en')"), unique=True)
+
+
 class DevelopmentField(UUIDPk, Timestamps, Base):
     """A direction of IT ("Backend", "AI & LLM", "Civil engineering"…): experience and certificate
     filters, and a tech-stack filter when activated on the Tech stack page."""
 
     __tablename__ = "development_fields"
+    __table_args__ = (_unique_english_name("development_fields"),)
 
     name: Mapped[I18nDict]
     icon_svg: Mapped[str | None] = mapped_column(Text)
@@ -30,6 +37,7 @@ class Instrument(UUIDPk, Timestamps, Base):
     """A kind of tool ("Languages & frameworks", "APIs & protocols", "Tools"…): tech-stack filters."""
 
     __tablename__ = "instruments"
+    __table_args__ = (_unique_english_name("instruments"),)
 
     name: Mapped[I18nDict]
     icon_svg: Mapped[str | None] = mapped_column(Text)
@@ -76,6 +84,7 @@ class Institute(UUIDPk, Timestamps, Base):
     """University, school or course platform: certificates."""
 
     __tablename__ = "institutes"
+    __table_args__ = (_unique_english_name("institutes"),)
 
     name: Mapped[I18nDict]
     website_url: Mapped[str | None] = mapped_column(String(2048))
@@ -89,6 +98,7 @@ class ProductType(UUIDPk, Timestamps, Base):
     """What a project is (Web, Mobile, Game…)."""
 
     __tablename__ = "product_types"
+    __table_args__ = (_unique_english_name("product_types"),)
 
     name: Mapped[I18nDict]
     icon_svg: Mapped[str] = mapped_column(Text)

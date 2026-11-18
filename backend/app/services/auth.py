@@ -1,11 +1,10 @@
 """Signing in to the admin panel: one admin user, opaque sessions, CSRF tokens, login throttling."""
 
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
-
-from email_validator import EmailNotValidError, validate_email
 
 from app.core.config import Settings
 from app.core.errors import FieldErrors, Forbidden, TooManyRequests, Unauthorized
@@ -22,6 +21,8 @@ from app.core.throttle import retry_after
 from app.models import AdminSession, AdminUser
 
 MIN_PASSWORD_LENGTH = 12
+USERNAME_LENGTH = (3, 32)
+_USERNAME_CHARS = re.compile(r"[a-z0-9._-]+")
 # Writing last_seen_at on every request isn't needed; once a minute keeps the idle timer accurate enough.
 TOUCH_INTERVAL = timedelta(minutes=1)
 
@@ -31,7 +32,7 @@ def utcnow() -> datetime:
 
 
 class AuthRepositoryProtocol(Protocol):
-    async def get_user_by_email(self, email: str) -> AdminUser | None: ...
+    async def get_user_by_username(self, username: str) -> AdminUser | None: ...
     async def add_user(self, user: AdminUser) -> None: ...
     async def add_session(self, session: AdminSession) -> None: ...
     async def get_session(self, token_hash: str) -> AdminSession | None: ...
@@ -51,8 +52,19 @@ class LoginResult:
     user: AdminUser
 
 
-def normalize_email(email: str) -> str:
-    return email.strip().lower()
+def normalize_username(username: str) -> str:
+    """Letter case and surrounding spaces don't matter: 'Admin ' and 'admin' are one account."""
+    return username.strip().lower()
+
+
+def username_error(username: str) -> str | None:
+    """What is wrong with a (normalized) username, if anything."""
+    low, high = USERNAME_LENGTH
+    if not low <= len(username) <= high or not _USERNAME_CHARS.fullmatch(username):
+        return f"Use {low}–{high} Latin letters, digits, dots, hyphens or underscores"
+    if not username[0].isalnum():
+        return "It must start with a letter or digit"
+    return None
 
 
 class AuthService:
@@ -61,22 +73,20 @@ class AuthService:
         self.settings = settings
         self.clock = clock
 
-    async def create_admin(self, email: str, password: str) -> AdminUser:
+    async def create_admin(self, username: str, password: str) -> AdminUser:
         """Creates the admin user, or resets the password (and signs out every session) if it exists."""
-        email = normalize_email(email)
+        username = normalize_username(username)
         errors: list[tuple[tuple[str, ...], str]] = []
-        try:
-            validate_email(email, check_deliverability=False)
-        except EmailNotValidError:
-            errors.append((("email",), "Enter a valid email address"))
+        if problem := username_error(username):
+            errors.append((("username",), problem))
         if len(password.strip()) < MIN_PASSWORD_LENGTH:
             errors.append((("password",), f"Use at least {MIN_PASSWORD_LENGTH} characters"))
         if errors:
             raise FieldErrors(errors)
 
-        user = await self.repo.get_user_by_email(email)
+        user = await self.repo.get_user_by_username(username)
         if user is None:
-            user = AdminUser(email=email, password_hash=hash_password(password))
+            user = AdminUser(username=username, password_hash=hash_password(password))
             await self.repo.add_user(user)
         else:
             user.password_hash = hash_password(password)
@@ -96,17 +106,17 @@ class AuthService:
         if wait is not None:
             raise TooManyRequests("Too many failed attempts. Try again later.", retry_after=wait)
 
-    async def login(self, email: str, password: str, *, ip_hash: str, user_agent: str) -> LoginResult:
+    async def login(self, username: str, password: str, *, ip_hash: str, user_agent: str) -> LoginResult:
         now = self.clock()
         await self._check_throttle(ip_hash, now)
 
-        user = await self.repo.get_user_by_email(normalize_email(email))
+        user = await self.repo.get_user_by_username(normalize_username(username))
         password_ok = verify_password(user.password_hash if user else DUMMY_PASSWORD_HASH, password)
         succeeded = user is not None and password_ok
         await self.repo.add_attempt(ip_hash, succeeded, now)
         if not succeeded:
             await self.repo.commit()
-            raise Unauthorized("Wrong email or password")
+            raise Unauthorized("Wrong username or password")
         assert user is not None
 
         session_token, csrf_token = new_token(), new_token()
@@ -166,6 +176,33 @@ class AuthService:
             raise FieldErrors(errors)
 
         user.password_hash = hash_password(new)
+        await self.repo.delete_other_sessions(user.id, session.id)
+        await self.repo.commit()
+
+    async def change_username(self, session: AdminSession, current_password: str, new: str, *, ip_hash: str) -> None:
+        """A new username for the signed-in admin, with the same safeguards as a new password: the current
+        password is checked first (wrong guesses count towards the sign-in limits), and every other
+        browser is signed out while this one stays signed in."""
+        now = self.clock()
+        await self._check_throttle(ip_hash, now)
+        user = session.user
+        username = normalize_username(new)
+        errors: list[tuple[tuple[str, ...], str]] = []
+        if problem := username_error(username):
+            errors.append((("new_username",), problem))
+        elif username == user.username:
+            errors.append((("new_username",), "Pick a username different from the current one"))
+        if not verify_password(user.password_hash, current_password):
+            await self.repo.add_attempt(ip_hash, False, now)
+            await self.repo.commit()
+            raise FieldErrors([(("current_password",), "This isn't your current password"), *errors])
+        if errors:
+            raise FieldErrors(errors)
+        # Only after the password is right, so the form can't be used to find out other admins' names.
+        if await self.repo.get_user_by_username(username) is not None:
+            raise FieldErrors([(("new_username",), "This username is taken")])
+
+        user.username = username
         await self.repo.delete_other_sessions(user.id, session.id)
         await self.repo.commit()
 

@@ -20,16 +20,9 @@ async def names(client, url: str) -> list[str]:
     ]
 
 
-def unique(values: list[str]) -> list[str]:
-    seen: set[str] = set()
-    return [v for v in values if not (v.lower() in seen or seen.add(v.lower()))]
-
-
 async def test_adds_every_field_and_technology_of_the_seed_once(db_session, auth_client):
     added = await add_missing_selectors(db_session, SEED)
-    # The seed itself lists "Game development" twice; it is added once.
-    assert added.fields == unique([field["name"]["en"] for field in SEED["development_fields"]])
-    assert len(added.fields) == len(SEED["development_fields"]) - 1
+    assert added.fields == [field["name"]["en"] for field in SEED["development_fields"]]
     assert added.techs == [tech["name"] for tech in SEED["tech_stacks"]]
 
     again = await add_missing_selectors(db_session, SEED)

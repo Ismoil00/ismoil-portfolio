@@ -81,6 +81,15 @@ def sanitize_rich_html(value: str) -> str:
     )
 
 
+def first_block_text(value: str) -> str:
+    """Plain text of the first paragraph or list item of rich text (for summaries and meta tags)."""
+    for block in re.split(r"</(?:p|li)>|<br\s*/?>", value or ""):
+        text = re.sub(r"\s+", " ", html.unescape(nh3.clean(block, tags=set()))).strip()
+        if text:
+            return text
+    return ""
+
+
 def rich_text_length(value: str) -> int:
     """Number of visible characters (tags removed, entities decoded, whitespace runs counted once)."""
     text = html.unescape(nh3.clean(value, tags=set()))

@@ -220,3 +220,6 @@ export interface PanelSettings {
   /** ANTHROPIC_API_KEY is set on the backend, so Claude can be chosen. */
   claude_ready: boolean;
 }
+
+/** The signed-in admin (GET /auth/me). */
+export type Me = { username: string };

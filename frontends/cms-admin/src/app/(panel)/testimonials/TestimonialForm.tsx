@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { api } from "@/api/client";
+import { DateField } from "@/components/form/DateField";
 import { Field, TextInput } from "@/components/form/Field";
 import { I18nField } from "@/components/form/I18nField";
 import { MultiPickField } from "@/components/form/MultiPickField";
@@ -17,7 +18,8 @@ import { applyServerErrors } from "@/components/form/server-errors";
 import { SingleMediaField } from "@/components/form/SingleMediaField";
 import { Card } from "@/components/ui/Card";
 import { useToast } from "@/components/ui/Toast";
-import { emptyI18n, i18nOrEmpty, i18nOrNull } from "@/lib/i18n";
+import { emptyI18n, i18nOrEmpty, i18nOrNull, LANG_LABELS, LANGS } from "@/lib/i18n";
+import { roleLabel } from "@/lib/roles";
 import { i18nOptional, i18nRequired, url } from "@/lib/validation";
 import type { Company, DevelopmentField, Media, Project, TechStack, Testimonial } from "@/types/api";
 
@@ -32,7 +34,7 @@ const schema = z
     field_id: z.string(),
     tech_stack_id: z.string(),
     given_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick the date").refine((v) => v <= today(), "This date is in the future"),
-    quote: i18nOptional(1000, "multiline"),
+    quote: i18nOptional(1000, "rich"),
     media: z.custom<Media | null>(),
     verify_url: url(),
     project_ids: z.array(z.string()),
@@ -75,6 +77,10 @@ export function TestimonialForm({
   const toast = useToast();
   const methods = useForm<Values>({ defaultValues: toValues(item), resolver: zodResolver(schema) });
   const { control, register, handleSubmit, reset, setError, setValue, clearErrors, formState } = methods;
+  const [fieldId, techId] = useWatch({ control, name: ["field_id", "tech_stack_id"] });
+  // What the site will show as "My role", in every language, for the field or technology picked.
+  const roleName = fields.find((f) => f.id === fieldId)?.name ?? techs.find((t) => t.id === techId)?.name;
+  const role = roleName ? roleLabel(roleName) : null;
   const [saveError, setSaveError] = useState<string | null>(null);
 
   async function save(v: Values) {
@@ -133,9 +139,15 @@ export function TestimonialForm({
             />
           </div>
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
-            <Field label="Date" htmlFor="t-date" required error={formState.errors.given_on?.message}>
-              <TextInput id="t-date" type="date" max={today()} {...register("given_on")} invalid={Boolean(formState.errors.given_on)} />
-            </Field>
+            <Controller
+              control={control}
+              name="given_on"
+              render={({ field, fieldState }) => (
+                <Field label="Date" htmlFor="t-date" required error={fieldState.error?.message}>
+                  <DateField id="t-date" mode="day" value={field.value || null} onChange={(v) => field.onChange(v ?? "")} max={today()} invalid={Boolean(fieldState.error)} />
+                </Field>
+              )}
+            />
             <Field label="Verification link" htmlFor="t-verify" required error={formState.errors.verify_url?.message} hint="A public page proving they're real: LinkedIn, Telegram, a website…">
               <TextInput id="t-verify" {...register("verify_url")} placeholder="https://www.linkedin.com/in/…" inputMode="url" invalid={Boolean(formState.errors.verify_url)} />
             </Field>
@@ -179,11 +191,24 @@ export function TestimonialForm({
               </div>
             </div>
           </Field>
+          {role && (
+            <div className="mt-4 rounded-xl border border-line bg-tint/[0.02] px-4 py-3" aria-live="polite">
+              <p className="text-xs text-subtle">Shown on the site as</p>
+              <ul className="mt-1.5 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
+                {LANGS.map((lang) => (
+                  <li key={lang} className="flex items-baseline gap-2">
+                    <span className="text-[10px] font-semibold tracking-wide text-faint">{LANG_LABELS[lang]}</span>
+                    <span className="font-medium text-fg">{role[lang]}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </Card>
 
         <Card title="What they said">
           <div className="space-y-5">
-            <I18nField name="quote" label="Quote" kind="multiline" rows={5} max={1000} hint="Optional — a video can speak for itself." />
+            <I18nField name="quote" label="Quote" kind="rich" max={1000} hint="Optional — a video can speak for itself. Format with the toolbar: bold, italic, underline, lists, links." />
             <Controller
               control={control}
               name="media"

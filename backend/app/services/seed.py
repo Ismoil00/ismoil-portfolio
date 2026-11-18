@@ -167,7 +167,7 @@ async def load_seed(session: AsyncSession, media: MediaService, data: dict[str, 
         project = Project(
             slug=p["slug"],
             title=p["title"],
-            description=p["description"],
+            description={lang: sanitize_rich_html(text) for lang, text in p["description"].items()},
             start_month=month_to_date(p["start"]),
             end_month=month_to_date(p["end"]),
             client_kind=p["client_kind"],

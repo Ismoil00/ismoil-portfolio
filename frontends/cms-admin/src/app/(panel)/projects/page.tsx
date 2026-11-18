@@ -24,15 +24,23 @@ export default async function ProjectsListPage() {
     >
       {items.map((p) => {
         const cover = p.media.find((m) => m.id === p.cover_id) ?? p.media.find((m) => m.content_type.startsWith("image/"));
-        const thumb = cover?.url ?? p.media.find((m) => m.poster_url)?.poster_url;
+        // A video cover shows its first frame: the poster captured on upload, or the video itself.
+        const coverVideo = cover?.content_type.startsWith("video/") ? cover : null;
+        const thumb = coverVideo ? coverVideo.poster_url : (cover?.url ?? p.media.find((m) => m.poster_url)?.poster_url);
         return (
           <ListRow
             key={p.id}
             href={`/projects/${p.id}`}
             media={
               <div className="grid aspect-video w-24 shrink-0 place-items-center overflow-hidden rounded-lg border border-line bg-tint/[0.03]">
-                {/* eslint-disable-next-line @next/next/no-img-element -- uploaded file */}
-                {thumb ? <img src={thumb} alt="" className="size-full object-cover" /> : <LuFolderKanban className="size-5 text-faint" />}
+                {thumb ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- uploaded file
+                  <img src={thumb} alt="" className="size-full object-cover" />
+                ) : coverVideo ? (
+                  <video src={coverVideo.url} muted preload="metadata" className="size-full object-cover" />
+                ) : (
+                  <LuFolderKanban className="size-5 text-faint" />
+                )}
               </div>
             }
             title={p.title.en}

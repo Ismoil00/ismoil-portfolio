@@ -105,8 +105,16 @@ export function PeriodFilter({
     monthNames,
     placeholder: t("any"),
     clearText: t("clear"),
-    prevYearText: t("prevYear"),
-    nextYearText: t("nextYear"),
+    openText: t("openCalendar"),
+    calendarText: t("calendar"),
+    typeHint: t("typeHint"),
+    texts: {
+      prevYear: t("prevYear"),
+      nextYear: t("nextYear"),
+      prevYears: t("prevYears"),
+      nextYears: t("nextYears"),
+      chooseYear: t("chooseYear"),
+    },
   };
   return (
     <div className="grid grid-cols-2 gap-3">

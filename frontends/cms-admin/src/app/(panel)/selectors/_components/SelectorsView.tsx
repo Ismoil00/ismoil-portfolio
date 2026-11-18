@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { LuExternalLink, LuPencil, LuPlus, LuTrash2 } from "react-icons/lu";
+import { LuExternalLink, LuPencil, LuPlus, LuSearch, LuTrash2, LuX } from "react-icons/lu";
 import { errorMessage } from "@/api/errors";
 import { deleteSelector, reorderSelector } from "@/api/selectors.api";
 import { Button } from "@/components/ui/Button";
@@ -17,6 +17,16 @@ import { describeUsage, kindInfo, kinds } from "./kinds";
 import { SelectorForm } from "./SelectorForm";
 
 type Editing = { item: AnySelectorItem | null } | null;
+type Sort = "custom" | "asc" | "desc";
+
+const SORTS: { value: Sort; label: string; title: string }[] = [
+  { value: "custom", label: "Your order", title: "The order you set by dragging (used by the dropdowns and the site)" },
+  { value: "asc", label: "A–Z", title: "By name, A to Z" },
+  { value: "desc", label: "Z–A", title: "By name, Z to A" },
+];
+
+/** Every name an item goes by: one for brands, three (EN / RU / TG) for the rest. */
+const namesOf = (item: AnySelectorItem) => (typeof item.name === "string" ? [item.name] : Object.values(item.name));
 
 export function SelectorsView({
   kind,
@@ -35,6 +45,19 @@ export function SelectorsView({
   const [editing, setEditing] = useState<Editing>(null);
   const [deleting, setDeleting] = useState<AnySelectorItem | null>(null);
   const [busy, setBusy] = useState(false);
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<Sort>("custom");
+
+  // Search and sort only change what is shown; dragging (which saves the order) works on the full
+  // list in your own order, so it's off while either is in use.
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const found = q ? items.filter((item) => namesOf(item).some((name) => name.toLowerCase().includes(q))) : items;
+    if (sort === "custom") return found;
+    const sorted = [...found].sort((a, b) => nameOf(a).localeCompare(nameOf(b), "en", { sensitivity: "base", numeric: true }));
+    return sort === "desc" ? sorted.reverse() : sorted;
+  }, [items, query, sort]);
+  const draggable = sort === "custom" && !query.trim();
 
   async function reorder(ids: string[]) {
     const previous = items;
@@ -102,22 +125,89 @@ export function SelectorsView({
             </Button>
           </div>
         ) : (
-          <SortableList
-            items={items}
-            onReorder={reorder}
-            className="divide-y divide-line overflow-hidden rounded-xl border border-line"
-            renderItem={(item, handle) => (
-              <Row
-                kind={kind}
-                item={item}
-                fields={fields}
-                instruments={instruments}
-                grip={<DragGrip handle={handle} />}
-                onEdit={() => setEditing({ item })}
-                onDelete={() => setDeleting(item)}
+          <>
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+              <label className="relative min-w-56 flex-1">
+                <span className="sr-only">Search {info.label.toLowerCase()}</span>
+                <LuSearch className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-faint" aria-hidden />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={typeof items[0].name === "string" ? "Search by name" : "Search by name (EN, RU or TG)"}
+                  className="w-full rounded-xl border border-line bg-tint/[0.03] py-2.5 pl-10 pr-9 text-sm text-fg placeholder:text-faint transition-[border-color,box-shadow] hover:border-line-strong focus:border-accent/70 focus:outline-none focus:ring-2 focus:ring-accent/20 [&::-webkit-search-cancel-button]:hidden"
+                />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery("")}
+                    aria-label="Clear the search"
+                    className="absolute right-2 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-lg text-faint hover:bg-tint/[0.06] hover:text-fg"
+                  >
+                    <LuX className="size-3.5" />
+                  </button>
+                )}
+              </label>
+              <div role="group" aria-label="Sort by name" className="flex shrink-0 rounded-xl border border-line bg-tint/[0.03] p-1">
+                {SORTS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setSort(option.value)}
+                    aria-pressed={sort === option.value}
+                    title={option.title}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                      sort === option.value ? "bg-accent/15 text-accent" : "text-muted hover:text-fg"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {shown.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-line px-6 py-10 text-center text-sm text-subtle">No {info.label.toLowerCase()} match “{query.trim()}”.</p>
+            ) : draggable ? (
+              <SortableList
+                items={items}
+                onReorder={reorder}
+                className="divide-y divide-line overflow-hidden rounded-xl border border-line"
+                renderItem={(item, handle) => (
+                  <Row
+                    kind={kind}
+                    item={item}
+                    fields={fields}
+                    instruments={instruments}
+                    grip={<DragGrip handle={handle} />}
+                    onEdit={() => setEditing({ item })}
+                    onDelete={() => setDeleting(item)}
+                  />
+                )}
               />
+            ) : (
+              <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line">
+                {shown.map((item) => (
+                  <li key={item.id}>
+                    <Row
+                      kind={kind}
+                      item={item}
+                      fields={fields}
+                      instruments={instruments}
+                      grip={<span className="w-8 shrink-0" aria-hidden />}
+                      onEdit={() => setEditing({ item })}
+                      onDelete={() => setDeleting(item)}
+                    />
+                  </li>
+                ))}
+              </ul>
             )}
-          />
+            <p className="mt-2.5 text-xs text-faint">
+              {draggable
+                ? `${items.length} in all. Drag the handle to change the order.`
+                : `Showing ${shown.length} of ${items.length}. Dragging works in “Your order” without a search.`}
+            </p>
+          </>
         )}
       </Card>
 
@@ -225,7 +315,6 @@ function Row({
       </div>
 
       {color && kind === "tech-stacks" && <span className="hidden size-4 shrink-0 rounded-full border border-line sm:block" style={{ background: color }} title={color} />}
-      {inUse && <span className="hidden shrink-0 rounded-full border border-line px-2.5 py-1 text-[11px] text-subtle md:inline">{usageText}</span>}
 
       <div className="flex shrink-0 items-center">
         <button type="button" onClick={onEdit} aria-label={`Edit ${nameOf(item)}`} title="Edit" className="grid size-9 place-items-center rounded-full text-muted transition-colors hover:bg-tint/5 hover:text-accent">

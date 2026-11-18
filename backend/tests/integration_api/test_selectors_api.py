@@ -2,7 +2,9 @@
 institutes, product types, link platforms)."""
 
 import pytest
+from sqlalchemy.exc import IntegrityError
 
+from app.models import DevelopmentField, Institute, Instrument, ProductType
 from tests.integration_api.test_media_api import png
 
 BASE = "/api/v1/admin/selectors"
@@ -201,3 +203,20 @@ async def test_wrong_kind_of_file_cannot_be_a_logo(auth_client):
     shot = (await auth_client.post("/api/v1/admin/media", data={"purpose": "project_image"}, files=files)).json()
     response = await auth_client.post(f"{BASE}/companies", json={"name": "Nope", "logo_id": shot["id"]})
     assert response.status_code == 422
+
+
+async def test_an_item_saves_under_its_own_unchanged_name(auth_client):
+    created = (await auth_client.post(f"{BASE}/development-fields", json={"name": i18n("Game development")})).json()
+    again = await auth_client.put(f"{BASE}/development-fields/{created['id']}", json={"name": i18n("Game development")})
+    assert again.status_code == 200, again.text
+
+
+@pytest.mark.parametrize("model", [DevelopmentField, Instrument, Institute, ProductType])
+async def test_the_database_itself_refuses_two_items_with_one_english_name(db_session, model):
+    # The Selectors page checks names first; this guards data that doesn't go through it (seeding, scripts).
+    extra = {"icon_svg": "<svg/>"} if model is ProductType else {}
+    db_session.add(model(name=i18n("Game development"), **extra))
+    db_session.add(model(name=i18n("game DEVELOPMENT"), **extra))
+    with pytest.raises(IntegrityError):
+        await db_session.flush()
+    await db_session.rollback()

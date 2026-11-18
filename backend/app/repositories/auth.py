@@ -10,8 +10,8 @@ from app.repositories.base import Repository
 
 
 class AuthRepository(Repository):
-    async def get_user_by_email(self, email: str) -> AdminUser | None:
-        return await self.session.scalar(select(AdminUser).where(AdminUser.email == email))
+    async def get_user_by_username(self, username: str) -> AdminUser | None:
+        return await self.session.scalar(select(AdminUser).where(AdminUser.username == username))
 
     async def add_user(self, user: AdminUser) -> None:
         self.session.add(user)
@@ -32,7 +32,7 @@ class AuthRepository(Repository):
         await self.session.execute(delete(AdminSession).where(AdminSession.user_id == user_id))
 
     async def delete_other_sessions(self, user_id: uuid.UUID, keep_id: uuid.UUID) -> None:
-        """Signs out every other browser of this user (after a password change)."""
+        """Signs out every other browser of this user (after a username or password change)."""
         await self.session.execute(
             delete(AdminSession).where(AdminSession.user_id == user_id, AdminSession.id != keep_id)
         )

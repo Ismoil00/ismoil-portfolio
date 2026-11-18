@@ -36,6 +36,29 @@ export class AdminApi {
     return (await response.json()) as T;
   }
 
+  async put<T>(path: string, body: unknown): Promise<T> {
+    const response = await this.context.put(path, { data: body });
+    if (!response.ok()) throw new Error(`PUT ${path} → ${response.status()} ${await response.text()}`);
+    return (await response.json()) as T;
+  }
+
+  /** Uploads a file (a video also needs its poster image and size), like the admin's upload fields. */
+  async upload(
+    purpose: string,
+    file: { name: string; mimeType: string; buffer: Buffer },
+    video?: { poster: Buffer; width: number; height: number },
+  ): Promise<{ id: string; url: string }> {
+    const multipart: Record<string, string | { name: string; mimeType: string; buffer: Buffer }> = { purpose, file };
+    if (video) {
+      multipart.poster = { name: "poster.jpg", mimeType: "image/jpeg", buffer: video.poster };
+      multipart.width = String(video.width);
+      multipart.height = String(video.height);
+    }
+    const response = await this.context.post("media", { multipart });
+    if (!response.ok()) throw new Error(`upload ${file.name} → ${response.status()} ${await response.text()}`);
+    return (await response.json()) as { id: string; url: string };
+  }
+
   async delete(path: string): Promise<void> {
     const response = await this.context.delete(path);
     if (!response.ok()) throw new Error(`DELETE ${path} → ${response.status()} ${await response.text()}`);

@@ -11,7 +11,7 @@ import { api } from "@/api/client";
 import { Field, TextInput } from "@/components/form/Field";
 import { I18nField } from "@/components/form/I18nField";
 import { MediaGallery } from "@/components/form/MediaGallery";
-import { MonthField } from "@/components/form/MonthField";
+import { DateField } from "@/components/form/DateField";
 import { MultiPickField } from "@/components/form/MultiPickField";
 import { fieldOptions } from "@/components/form/options";
 import { Picker } from "@/components/form/Picker";
@@ -115,8 +115,8 @@ export function CertificateForm({
                 control={control}
                 name="start"
                 render={({ field, fieldState }) => (
-                  <Field label="From" required error={fieldState.error?.message}>
-                    <MonthField value={field.value} onChange={field.onChange} max={currentMonth()} invalid={Boolean(fieldState.error)} />
+                  <Field htmlFor="c-start" label="From" required error={fieldState.error?.message}>
+                    <DateField id="c-start" value={field.value} onChange={field.onChange} max={currentMonth()} invalid={Boolean(fieldState.error)} />
                   </Field>
                 )}
               />
@@ -124,8 +124,8 @@ export function CertificateForm({
                 control={control}
                 name="end"
                 render={({ field, fieldState }) => (
-                  <Field label="To" required error={fieldState.error?.message} hint="Same as “From” for a one-day exam.">
-                    <MonthField value={field.value} onChange={field.onChange} min={start} max={currentMonth()} invalid={Boolean(fieldState.error)} />
+                  <Field htmlFor="c-end" label="To" required error={fieldState.error?.message} hint="Same as “From” for a one-day exam.">
+                    <DateField id="c-end" value={field.value} onChange={field.onChange} min={start} max={currentMonth()} invalid={Boolean(fieldState.error)} />
                   </Field>
                 )}
               />

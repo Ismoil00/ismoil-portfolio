@@ -101,7 +101,8 @@ async def test_projects(client, seeded, auth_client):
     project = (await client.get(f"{P}/projects/gov-platform", params={"lang": "ru"})).json()
     assert project["client"] == {"kind": "company", "name": "Smartpay", "url": None}
     assert project["traffic"] is None  # not set → hidden on the site
-    assert project["description"][0]  # paragraphs
+    assert project["description"].startswith("<p>")  # rich text (sanitized HTML)
+    assert project["summary"] and "<" not in project["summary"] and len(project["summary"]) <= 300
     assert (await client.get(f"{P}/projects/nope", params={"lang": "en"})).status_code == 404
 
     slugs = (await client.get(f"{P}/projects/slugs")).json()
@@ -130,13 +131,13 @@ async def test_certificates_and_testimonials(client, seeded, auth_client):
     projects = (await auth_client.get("/api/v1/admin/projects")).json()
     body = {
         "author_name": f.i18n("Daniel Brooks"), "author_role": f.i18n("CTO"), "company_id": company["id"],
-        "field_id": None, "tech_stack_id": tech["id"], "given_on": "2025-04-10", "quote": None, "media_id": None,
+        "field_id": None, "tech_stack_id": tech["id"], "given_on": "2025-04-10", "quote": {"en": "<p>Solid <strong>work</strong>.</p>", "ru": "<p>Хорошо.</p>", "tg": "<p>Хуб.</p>"}, "media_id": None,
         "verify_url": "https://www.linkedin.com/in/someone", "project_ids": [projects[0]["id"]],
     }  # fmt: skip
     assert (await auth_client.post("/api/v1/admin/testimonials", json=body)).status_code == 201
     page = (await client.get(f"{P}/testimonials", params={"lang": "ru"})).json()
     item = page["items"][0]
-    assert item["author"] == "Daniel Brooks (ru)" and item["quote"] is None and item["media"] is None
+    assert item["author"] == "Daniel Brooks (ru)" and item["quote"] == "<p>Хорошо.</p>" and item["media"] is None
     assert item["date"] == "2025-04-10" and item["myRole"] == "Rust Разработчик"
     english = (await client.get(f"{P}/testimonials", params={"lang": "en"})).json()["items"][0]
     assert english["myRole"] == "Rust development"
@@ -156,3 +157,34 @@ async def test_paging_is_bounded(client, seeded):
     assert (await client.get(f"{P}/projects", params={"lang": "en", "limit": 1000})).status_code == 422
     assert (await client.get(f"{P}/projects", params={"lang": "en", "offset": -1})).status_code == 422
     assert (await client.get(f"{P}/projects", params={"lang": "en", "from": "2024-13"})).status_code == 422
+
+
+async def test_a_video_cover_is_sent_as_a_playable_video(client, auth_client, storage_dir):
+    web, tech = await f.product_type(auth_client), await f.tech(auth_client, "Elixir")
+    image = await f.upload(auth_client, "project_image")
+    video = await f.upload(auth_client, "project_video", video=True)
+    body = {
+        "title": f.i18n("Video first"),
+        "description": f.i18n("<p>One <strong>important</strong> demo.</p><p>More.</p>"),
+        "start": "2024-01",
+        "end": "2024-03",
+        "client_kind": "self",
+        "company_id": None,
+        "traffic": "under100",
+        "live_url": "https://example.com/",
+        "repo_url": None,
+        "is_private": False,
+        "type_ids": [web["id"]],
+        "tech_ids": [tech["id"]],
+        "media_ids": [image["id"], video["id"]],
+        "cover_id": video["id"],
+    }
+    assert (await auth_client.post("/api/v1/admin/projects", json=body)).status_code == 201
+
+    card = (await client.get(f"{P}/projects", params={"lang": "en"})).json()["items"][0]
+    assert card["cover"]["type"] == "video"
+    assert card["cover"]["src"].endswith(".mp4") and card["cover"]["poster"]
+
+    page = (await client.get(f"{P}/projects/video-first", params={"lang": "en"})).json()
+    assert page["summary"] == "One important demo."
+    assert page["description"] == "<p>One <strong>important</strong> demo.</p><p>More.</p>"

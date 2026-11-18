@@ -102,6 +102,8 @@
     "liveHint": "Открыть демо в новой вкладке",
     "liveClosed": "Демо недоступно",
     "open": "Открыть проект: {name}",
+    "playVideo": "Смотреть видео проекта «{name}»",
+    "openImage": "Открыть изображение проекта «{name}» во весь экран",
     "viewAll": "Все проекты",
     "viewAllCount": "{count, plural, one {# проект} few {# проекта} many {# проектов} other {# проекта}}",
     "inDevelopment": "В разработке"
@@ -179,6 +181,12 @@
     "clear": "Очистить",
     "prevYear": "Предыдущий год",
     "nextYear": "Следующий год",
+    "prevYears": "Предыдущие 12 лет",
+    "nextYears": "Следующие 12 лет",
+    "chooseYear": "Выбрать год",
+    "openCalendar": "Открыть календарь",
+    "calendar": "Календарь",
+    "typeHint": "Или введите: 03.2024 или мар. 2024",
     "showing": "Показано {shown} из {total}",
     "loadMore": "Показать ещё {count}",
     "loading": "Загрузка…"

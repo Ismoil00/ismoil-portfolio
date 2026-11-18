@@ -89,6 +89,20 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* Full-screen image/video viewer (MediaViewer): the same entrance as the public site's lightbox. */
+.media-viewer[open] { animation: viewer-in 0.22s ease-out; }
+.media-viewer[open]::backdrop { animation: viewer-fade 0.22s ease-out; }
+@keyframes viewer-in {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes viewer-fade {
+  from { opacity: 0; }
+}
+@keyframes viewer-media {
+  from { opacity: 0; transform: scale(0.97); }
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-fg);

@@ -24,12 +24,12 @@ class FakeAuthRepository:
         self.attempts: list[tuple[str, bool, datetime]] = []
         self.commits = 0
 
-    async def get_user_by_email(self, email: str) -> AdminUser | None:
-        return self.users.get(email)
+    async def get_user_by_username(self, username: str) -> AdminUser | None:
+        return self.users.get(username)
 
     async def add_user(self, user: AdminUser) -> None:
         user.id = user.id or uuid.uuid4()
-        self.users[user.email] = user
+        self.users[user.username] = user
 
     async def add_session(self, session: AdminSession) -> None:
         session.id = session.id or uuid.uuid4()

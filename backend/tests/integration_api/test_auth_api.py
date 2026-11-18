@@ -1,7 +1,7 @@
 """Auth endpoints and the protections every request gets (cookies, CSRF, origin, headers, limits)."""
 
 from tests.conftest import ADMIN_ORIGIN
-from tests.integration_api.conftest import ADMIN_EMAIL, ADMIN_PASSWORD, make_client
+from tests.integration_api.conftest import ADMIN_PASSWORD, ADMIN_USERNAME, make_client
 
 LOGIN = "/api/v1/auth/login"
 LOGOUT = "/api/v1/auth/logout"
@@ -23,10 +23,10 @@ async def test_health_has_security_headers(client):
 
 
 async def test_login_sets_httponly_strict_session_cookie_and_returns_csrf(client, admin_user, settings):
-    response = await client.post(LOGIN, json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
+    response = await client.post(LOGIN, json={"username": ADMIN_USERNAME, "password": ADMIN_PASSWORD})
     assert response.status_code == 200
     body = response.json()
-    assert body["email"] == ADMIN_EMAIL
+    assert body["username"] == ADMIN_USERNAME
     assert body["csrf_token"]
 
     session_cookie = _cookie_header(response, settings.session_cookie).lower()
@@ -41,31 +41,40 @@ async def test_me_requires_a_session(client, auth_client):
     assert (await client.get(ME)).status_code == 401
     response = await auth_client.get(ME)
     assert response.status_code == 200
-    assert response.json()["email"] == ADMIN_EMAIL
+    assert response.json()["username"] == ADMIN_USERNAME
 
 
 async def test_wrong_credentials_get_one_generic_message(client, admin_user):
     for payload in (
-        {"email": ADMIN_EMAIL, "password": "wrong-password"},
-        {"email": "nobody@example.com", "password": ADMIN_PASSWORD},
+        {"username": ADMIN_USERNAME, "password": "wrong-password"},
+        {"username": "nobody", "password": ADMIN_PASSWORD},
     ):
         response = await client.post(LOGIN, json=payload)
         assert response.status_code == 401
-        assert response.json()["detail"] == "Wrong email or password"
+        assert response.json()["detail"] == "Wrong username or password"
 
 
 async def test_login_is_throttled_with_retry_after(client, admin_user, settings):
     for _ in range(settings.login_max_failures):
-        assert (await client.post(LOGIN, json={"email": ADMIN_EMAIL, "password": "nope-nope-nope"})).status_code == 401
-    response = await client.post(LOGIN, json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
+        assert (
+            await client.post(LOGIN, json={"username": ADMIN_USERNAME, "password": "nope-nope-nope"})
+        ).status_code == 401
+    response = await client.post(LOGIN, json={"username": ADMIN_USERNAME, "password": ADMIN_PASSWORD})
     assert response.status_code == 429
     assert int(response.headers["retry-after"]) > 0
 
 
+async def test_the_username_ignores_letter_case_and_surrounding_spaces(client, admin_user):
+    response = await client.post(LOGIN, json={"username": f"  {ADMIN_USERNAME.upper()} ", "password": ADMIN_PASSWORD})
+    assert response.status_code == 200
+    assert response.json()["username"] == ADMIN_USERNAME
+
+
 async def test_login_validates_input(client):
-    assert (await client.post(LOGIN, json={"email": "not-an-email", "password": "x"})).status_code == 422
-    assert (await client.post(LOGIN, json={"email": ADMIN_EMAIL})).status_code == 422
-    extra = {"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD, "is_admin": True}
+    assert (await client.post(LOGIN, json={"username": "", "password": "x"})).status_code == 422
+    assert (await client.post(LOGIN, json={"email": "admin@example.com", "password": "x"})).status_code == 422
+    assert (await client.post(LOGIN, json={"username": ADMIN_USERNAME})).status_code == 422
+    extra = {"username": ADMIN_USERNAME, "password": ADMIN_PASSWORD, "is_admin": True}
     assert (await client.post(LOGIN, json=extra)).status_code == 422  # unknown fields are refused
 
 

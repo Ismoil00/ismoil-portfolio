@@ -164,15 +164,6 @@
       "icon_svg": null
     },
     {
-      "key": "gamedev",
-      "name": {
-        "en": "Game development",
-        "ru": "Разработка игр",
-        "tg": "Таҳияи бозиҳо"
-      },
-      "icon_svg": null
-    },
-    {
       "key": "management",
       "name": {
         "en": "Project management",
@@ -1803,9 +1794,9 @@
         "tg": "Платформаи хизматрасониҳои давлатӣ"
       },
       "description": {
-        "en": "Seven production modules for national government agencies, built solo from requirements to deployment: domain modelling, REST API, role-based access, and a React admin interface.\n\nI worked directly with the client: gathered requirements, turned them into technical specifications, and split tasks across the team while implementing most of the business logic myself.",
-        "ru": "Семь продакшн-модулей для государственных ведомств, созданных в одиночку от требований до деплоя: модель предметной области, REST API, ролевой доступ и админ-интерфейс на React.\n\nРаботал напрямую с клиентом: собирал требования, превращал их в техническое задание и распределял задачи в команде, реализуя большую часть бизнес-логики сам.",
-        "tg": "Ҳафт модули истеҳсолӣ барои муассисаҳои давлатӣ, ки танҳо аз талабот то ба истифода додан сохта шуданд: модели соҳа, REST API, дастрасии ба нақш асосёфта ва интерфейси админ дар React.\n\nБевосита бо мизоҷ кор кардам: талаботро ҷамъ оварда, ба супориши техникӣ табдил додам ва вазифаҳоро дар даста тақсим намуда, қисми асосии мантиқи тиҷориро худам навиштам."
+        "en": "<p>Seven production modules for national government agencies, built solo from requirements to deployment: domain modelling, REST API, role-based access, and a React admin interface.</p><p>I worked directly with the client: gathered requirements, turned them into technical specifications, and split tasks across the team while implementing most of the business logic myself.</p>",
+        "ru": "<p>Семь продакшн-модулей для государственных ведомств, созданных в одиночку от требований до деплоя: модель предметной области, REST API, ролевой доступ и админ-интерфейс на React.</p><p>Работал напрямую с клиентом: собирал требования, превращал их в техническое задание и распределял задачи в команде, реализуя большую часть бизнес-логики сам.</p>",
+        "tg": "<p>Ҳафт модули истеҳсолӣ барои муассисаҳои давлатӣ, ки танҳо аз талабот то ба истифода додан сохта шуданд: модели соҳа, REST API, дастрасии ба нақш асосёфта ва интерфейси админ дар React.</p><p>Бевосита бо мизоҷ кор кардам: талаботро ҷамъ оварда, ба супориши техникӣ табдил додам ва вазифаҳоро дар даста тақсим намуда, қисми асосии мантиқи тиҷориро худам навиштам.</p>"
       },
       "start": "2025-08",
       "end": "2026-06",
@@ -1833,9 +1824,9 @@
         "tg": "Бэкенд барои бонк ва бахши давлатӣ"
       },
       "description": {
-        "en": "Backend services for a bank and government agencies with frontend-first API contracts and complete OpenAPI documentation, built for scale, security, and maintainability.\n\nAPIs and JSON responses were shaped around the frontend team's real needs — no over- or under-fetching — and the OpenAPI/Swagger docs were complete enough that they rarely had to ask.",
-        "ru": "Бэкенд-сервисы для банка и государственных ведомств с API, построенным под нужды фронтенда, и полной OpenAPI-документацией — с упором на масштаб, безопасность и поддерживаемость.\n\nAPI и JSON-ответы строились под реальные нужды фронтенда — без избыточной и недостаточной выборки, — а OpenAPI/Swagger-документация была настолько полной, что вопросов почти не возникало.",
-        "tg": "Хизматрасониҳои бэкенд барои бонк ва муассисаҳои давлатӣ бо API-и мувофиқ ба ниёзҳои фронтенд ва ҳуҷҷатгузории пурраи OpenAPI — бо диққат ба миқёс, амният ва нигоҳдорӣ.\n\nAPI ва ҷавобҳои JSON мувофиқи ниёзҳои воқеии фронтенд сохта шуданд ва ҳуҷҷатгузории OpenAPI/Swagger чунон пурра буд, ки саволҳо қариб пайдо намешуданд."
+        "en": "<p>Backend services for a bank and government agencies with frontend-first API contracts and complete OpenAPI documentation, built for scale, security, and maintainability.</p><p>APIs and JSON responses were shaped around the frontend team's real needs — no over- or under-fetching — and the OpenAPI/Swagger docs were complete enough that they rarely had to ask.</p>",
+        "ru": "<p>Бэкенд-сервисы для банка и государственных ведомств с API, построенным под нужды фронтенда, и полной OpenAPI-документацией — с упором на масштаб, безопасность и поддерживаемость.</p><p>API и JSON-ответы строились под реальные нужды фронтенда — без избыточной и недостаточной выборки, — а OpenAPI/Swagger-документация была настолько полной, что вопросов почти не возникало.</p>",
+        "tg": "<p>Хизматрасониҳои бэкенд барои бонк ва муассисаҳои давлатӣ бо API-и мувофиқ ба ниёзҳои фронтенд ва ҳуҷҷатгузории пурраи OpenAPI — бо диққат ба миқёс, амният ва нигоҳдорӣ.</p><p>API ва ҷавобҳои JSON мувофиқи ниёзҳои воқеии фронтенд сохта шуданд ва ҳуҷҷатгузории OpenAPI/Swagger чунон пурра буд, ки саволҳо қариб пайдо намешуданд.</p>"
       },
       "start": "2024-03",
       "end": "2025-08",
@@ -1863,9 +1854,9 @@
         "tg": "Портали миллӣ бо ҷустуҷӯ"
       },
       "description": {
-        "en": "Elasticsearch-powered search features inside a micro-frontend Next.js platform, with a shared UI kit used across teams.\n\nI designed and managed the Elasticsearch indexes and queries behind the search-heavy features, prepared optimized data structures for the frontend, and co-designed the micro-frontend architecture and the shared UI-kit component library with the frontend team.",
-        "ru": "Поиск на Elasticsearch внутри микрофронтенд-платформы на Next.js с общим UI-китом для всех команд.\n\nПроектировал и вёл индексы и запросы Elasticsearch для функций с интенсивным поиском, готовил оптимизированные структуры данных для фронтенда и вместе с фронтенд-командой спроектировал микрофронтенд-архитектуру и общую библиотеку UI-компонентов.",
-        "tg": "Ҷустуҷӯ дар асоси Elasticsearch дар дохили платформаи микрофронтенди Next.js бо UI-кити умумӣ барои ҳамаи дастаҳо.\n\nИндексҳо ва дархостҳои Elasticsearch-ро барои функсияҳои ҷустуҷӯӣ тарҳрезӣ ва идора кардам, сохторҳои оптимизатсияшудаи додаҳоро барои фронтенд омода сохтам ва ҳамроҳи дастаи фронтенд меъмории микрофронтенд ва китобхонаи умумии компонентҳои UI-ро тарҳрезӣ кардам."
+        "en": "<p>Elasticsearch-powered search features inside a micro-frontend Next.js platform, with a shared UI kit used across teams.</p><p>I designed and managed the Elasticsearch indexes and queries behind the search-heavy features, prepared optimized data structures for the frontend, and co-designed the micro-frontend architecture and the shared UI-kit component library with the frontend team.</p>",
+        "ru": "<p>Поиск на Elasticsearch внутри микрофронтенд-платформы на Next.js с общим UI-китом для всех команд.</p><p>Проектировал и вёл индексы и запросы Elasticsearch для функций с интенсивным поиском, готовил оптимизированные структуры данных для фронтенда и вместе с фронтенд-командой спроектировал микрофронтенд-архитектуру и общую библиотеку UI-компонентов.</p>",
+        "tg": "<p>Ҷустуҷӯ дар асоси Elasticsearch дар дохили платформаи микрофронтенди Next.js бо UI-кити умумӣ барои ҳамаи дастаҳо.</p><p>Индексҳо ва дархостҳои Elasticsearch-ро барои функсияҳои ҷустуҷӯӣ тарҳрезӣ ва идора кардам, сохторҳои оптимизатсияшудаи додаҳоро барои фронтенд омода сохтам ва ҳамроҳи дастаи фронтенд меъмории микрофронтенд ва китобхонаи умумии компонентҳои UI-ро тарҳрезӣ кардам.</p>"
       },
       "start": "2023-02",
       "end": "2024-03",

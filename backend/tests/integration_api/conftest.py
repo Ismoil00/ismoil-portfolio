@@ -20,7 +20,7 @@ from app.repositories.auth import AuthRepository
 from app.services.auth import AuthService
 from tests.conftest import ADMIN_ORIGIN
 
-ADMIN_EMAIL = "admin@example.com"
+ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "a-long-and-secret-passphrase"
 CLIENT_IP = "198.51.100.10"
 
@@ -109,14 +109,14 @@ async def client(app) -> AsyncIterator[AsyncClient]:
 
 @pytest.fixture
 async def admin_user(db_session: AsyncSession, settings: Settings):
-    return await AuthService(AuthRepository(db_session), settings).create_admin(ADMIN_EMAIL, ADMIN_PASSWORD)
+    return await AuthService(AuthRepository(db_session), settings).create_admin(ADMIN_USERNAME, ADMIN_PASSWORD)
 
 
 @pytest.fixture
 async def auth_client(app, admin_user) -> AsyncIterator[AsyncClient]:
     """Signed in, with the CSRF header set for every request."""
     async with make_client(app) as c:
-        response = await c.post("/api/v1/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
+        response = await c.post("/api/v1/auth/login", json={"username": ADMIN_USERNAME, "password": ADMIN_PASSWORD})
         assert response.status_code == 200, response.text
         c.headers["X-CSRF-Token"] = response.json()["csrf_token"]
         yield c

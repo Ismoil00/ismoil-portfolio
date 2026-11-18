@@ -10,7 +10,7 @@ import { api } from "@/api/client";
 import { Checkbox } from "@/components/form/Choice";
 import { Field } from "@/components/form/Field";
 import { I18nField } from "@/components/form/I18nField";
-import { MonthField } from "@/components/form/MonthField";
+import { DateField } from "@/components/form/DateField";
 import { MultiPickField } from "@/components/form/MultiPickField";
 import { companyOptions, fieldOptions, projectOptions, techOptions, testimonialOptions } from "@/components/form/options";
 import { Picker } from "@/components/form/Picker";
@@ -132,8 +132,8 @@ export function ExperienceForm({
               control={control}
               name="start"
               render={({ field, fieldState }) => (
-                <Field label="From" required error={fieldState.error?.message}>
-                  <MonthField value={field.value} onChange={field.onChange} max={currentMonth()} invalid={Boolean(fieldState.error)} />
+                <Field htmlFor="exp-start" label="From" required error={fieldState.error?.message}>
+                  <DateField id="exp-start" value={field.value} onChange={field.onChange} max={currentMonth()} invalid={Boolean(fieldState.error)} />
                 </Field>
               )}
             />
@@ -141,8 +141,8 @@ export function ExperienceForm({
               control={control}
               name="end"
               render={({ field, fieldState }) => (
-                <Field label="To" required={!isCurrent} error={fieldState.error?.message}>
-                  <MonthField value={isCurrent ? null : field.value} onChange={field.onChange} min={start} max={currentMonth()} disabled={isCurrent} invalid={Boolean(fieldState.error)} placeholder={isCurrent ? "Present" : "Pick a month"} />
+                <Field htmlFor="exp-end" label="To" required={!isCurrent} error={fieldState.error?.message}>
+                  <DateField id="exp-end" value={isCurrent ? null : field.value} onChange={field.onChange} min={start} max={currentMonth()} disabled={isCurrent} invalid={Boolean(fieldState.error)} placeholder={isCurrent ? "Present" : undefined} />
                 </Field>
               )}
             />
@@ -154,7 +154,12 @@ export function ExperienceForm({
               <div className="mt-4">
                 <Checkbox
                   label="I work here now"
-                  description={presentElsewhere && !field.value ? `Only one job can be present: “${presentElsewhere}” is. Give it an end month first.` : "Shown as “Present”."}
+                  description={presentElsewhere && !field.value ? undefined : "Shown as “Present”."}
+                  blockedReason={
+                    presentElsewhere
+                      ? `Unavailable: only one position can be marked as current, and “${presentElsewhere}” already is. Set an end month for it first.`
+                      : undefined
+                  }
                   checked={field.value}
                   disabled={Boolean(presentElsewhere) && !field.value}
                   onChange={(e) => {

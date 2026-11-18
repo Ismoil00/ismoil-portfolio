@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { LuImagePlus, LuPlay, LuStar, LuTrash2, LuVideo } from "react-icons/lu";
+import { LuExpand, LuImagePlus, LuPlay, LuStar, LuTrash2, LuVideo } from "react-icons/lu";
 import { checkFile, discardMedia, uploadMedia, uploadRules, type MediaPurpose } from "@/api/media.api";
 import { errorMessage } from "@/api/errors";
 import { Button } from "@/components/ui/Button";
+import { MediaViewer } from "@/components/ui/MediaViewer";
 import { DragGrip, SortableList } from "@/components/ui/SortableList";
 import { probeVideo } from "@/lib/video";
 import type { Media } from "@/types/api";
@@ -17,7 +18,8 @@ interface Pending {
 
 /**
  * Images (and optionally videos) of a project or certificate: uploaded as soon as they're picked,
- * shown in order (drag to reorder), one image can be the cover. Limits are checked before upload.
+ * shown in order (drag to reorder); any file, image or video, can be the cover. Limits are checked
+ * before upload. A click on a file opens it full size (videos play) to check it before saving.
  */
 export function MediaGallery({
   value,
@@ -48,6 +50,7 @@ export function MediaGallery({
   const videoInput = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState<Pending[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
+  const [viewing, setViewing] = useState<number | null>(null);
   // The latest list, for uploads that finish after other changes.
   const latest = useRef(value);
   latest.current = value;
@@ -142,17 +145,32 @@ export function MediaGallery({
             const preview = isVideo ? media.poster_url : media.url;
             return (
               <figure className={`group relative overflow-hidden rounded-xl border bg-tint/[0.03] ${isCover ? "border-accent/70" : "border-line"}`}>
-                <div className="relative aspect-video">
+                <button
+                  type="button"
+                  onClick={() => setViewing(value.indexOf(media))}
+                  aria-label={`${isVideo ? "Play" : "Open"} ${media.original_name} full size`}
+                  className="group/open relative block aspect-video w-full cursor-zoom-in focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element -- uploaded file */}
-                  {preview ? <img src={preview} alt="" className="size-full object-cover" /> : <div className="grid size-full place-items-center text-faint"><LuVideo className="size-6" /></div>}
-                  {isVideo && <span className="absolute left-2 top-2 grid size-7 place-items-center rounded-full bg-bg/80 text-fg"><LuPlay className="size-3.5" /></span>}
+                  {preview ? <img src={preview} alt="" className="size-full object-cover" /> : <span className="grid size-full place-items-center text-faint"><LuVideo className="size-6" /></span>}
+                  {isVideo ? (
+                    <span className="absolute inset-0 grid place-items-center bg-black/20 transition-colors group-hover/open:bg-black/35">
+                      <span className="grid size-10 place-items-center rounded-full border border-white/30 bg-black/50 text-white backdrop-blur transition-transform group-hover/open:scale-110">
+                        <LuPlay className="ml-0.5 size-4 fill-current" />
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="absolute right-2 top-2 grid size-7 place-items-center rounded-full bg-black/50 text-white opacity-0 backdrop-blur transition-opacity group-hover/open:opacity-100 group-focus-visible/open:opacity-100">
+                      <LuExpand className="size-3.5" />
+                    </span>
+                  )}
                   {isCover && <span className="absolute left-2 top-2 rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold text-bg light:text-white">Cover</span>}
-                </div>
+                </button>
                 <figcaption className="flex items-center gap-1 px-1.5 py-1.5">
                   <DragGrip handle={handle} />
                   <span className="min-w-0 flex-1 truncate text-xs text-subtle" title={media.original_name}>{media.original_name}</span>
-                  {onCoverChange && !isVideo && (
-                    <button type="button" onClick={() => onCoverChange(media.id)} aria-label="Use as cover" title="Use as the card's cover" aria-pressed={isCover} className={`grid size-7 place-items-center rounded-full transition-colors ${isCover ? "text-accent" : "text-faint hover:text-accent"}`}>
+                  {onCoverChange && (
+                    <button type="button" onClick={() => onCoverChange(media.id)} aria-label={`Use ${media.original_name} as cover`} title={isVideo ? "Use as the card's cover (the site plays it from the card)" : "Use as the card's cover"} aria-pressed={isCover} className={`grid size-7 place-items-center rounded-full transition-colors ${isCover ? "text-accent" : "text-faint hover:text-accent"}`}>
                       <LuStar className={`size-3.5 ${isCover ? "fill-current" : ""}`} />
                     </button>
                   )}
@@ -165,6 +183,8 @@ export function MediaGallery({
           }}
         />
       )}
+
+      {viewing !== null && <MediaViewer items={value} index={viewing} onIndex={setViewing} onClose={() => setViewing(null)} />}
 
       {pending.length > 0 && (
         <ul className="mt-3 space-y-1.5">

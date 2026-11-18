@@ -7,7 +7,7 @@ from app.core.contacts import channel_link
 from app.core.errors import NotFound, ServiceUnavailable
 from app.core.places import utc_offset_label
 from app.core.roles import role_label
-from app.core.text import date_to_month
+from app.core.text import date_to_month, first_block_text
 from app.models import Certificate, Company, Experience, Institute, Media, Project, TechStack, Testimonial
 from app.repositories.public import ListQuery, PublicRepository
 from app.repositories.storage import Storage
@@ -241,14 +241,13 @@ class PublicService:
         p = await self.repo.project_by_slug(slug)
         if p is None:
             raise NotFound("Project not found")
-        text = paragraphs(tr(p.description, lang))
-        summary = re.sub(r"\*\*(.+?)\*\*", r"\1", text[0]) if text else ""
+        description = tr(p.description, lang) or ""  # sanitized HTML, cleaned when it was saved
         card = self.project_card(p, lang).model_dump()
         card["stack"] = [self.tech(t) for t in p.techs]
         return s.ProjectDetail(
             **card,
-            summary=summary[:300],
-            description=text,
+            summary=first_block_text(description)[:300],
+            description=description,
             start=date_to_month(p.start_month),
             client=s.ProjectClient(
                 kind=p.client_kind,

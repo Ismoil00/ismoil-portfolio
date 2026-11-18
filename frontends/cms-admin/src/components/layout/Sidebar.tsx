@@ -12,7 +12,7 @@ import { navItems } from "./nav-items";
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 /** Left menu (fixed on large screens, a drawer on small ones), with theme, "View site" and sign out. */
-export function Sidebar({ email }: { email: string }) {
+export function Sidebar({ username }: { username: string }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -85,8 +85,8 @@ export function Sidebar({ email }: { email: string }) {
       <div className="mt-2 flex items-center gap-2 rounded-xl px-3 py-2">
         <div className="min-w-0 flex-1">
           <p className="text-xs text-faint">Signed in as</p>
-          <p className="truncate text-sm" title={email}>
-            {email}
+          <p className="truncate text-sm" title={username}>
+            {username}
           </p>
         </div>
         <button

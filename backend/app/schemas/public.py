@@ -159,7 +159,7 @@ class ProjectClient(PublicModel):
 
 class ProjectDetail(ProjectCard):
     summary: str
-    description: list[str]  # paragraphs, **text** emphasized
+    description: str  # sanitized HTML (rich text)
     start: str
     client: ProjectClient
     traffic: Traffic | None

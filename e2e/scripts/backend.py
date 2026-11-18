@@ -25,7 +25,7 @@ STATE_DIR = E2E_DIR / ".tmp"
 PORT = int(os.environ.get("E2E_BACKEND_PORT", "8100"))
 ADMIN_ORIGIN = os.environ.get("E2E_ADMIN_ORIGIN", "http://localhost:3101")
 DB_NAME = "portfolio_e2e"
-ADMIN_EMAIL = "e2e-admin@example.com"
+ADMIN_USERNAME = "e2e-admin"
 
 # Settings for this backend only — environment variables take priority over backend/.env.
 os.environ.update(
@@ -105,7 +105,7 @@ async def reset_and_seed(settings: Settings, password: str) -> None:
             media = MediaService(MediaRepository(session), create_storage(settings))
             data = json.loads((BACKEND / "seed" / "content.json").read_text(encoding="utf-8"))
             await load_seed(session, media, data, repo_root=REPO)
-            await AuthService(AuthRepository(session), settings).create_admin(ADMIN_EMAIL, password)
+            await AuthService(AuthRepository(session), settings).create_admin(ADMIN_USERNAME, password)
     finally:
         await db.dispose()
 
@@ -121,7 +121,7 @@ def main() -> None:
     asyncio.run(reset_and_seed(settings, password))
 
     STATE_DIR.mkdir(parents=True, exist_ok=True)
-    (STATE_DIR / "admin.json").write_text(json.dumps({"email": ADMIN_EMAIL, "password": password}), encoding="utf-8")
+    (STATE_DIR / "admin.json").write_text(json.dumps({"username": ADMIN_USERNAME, "password": password}), encoding="utf-8")
     print(f"E2E backend: fresh seeded database {DB_NAME!r}, serving on http://localhost:{PORT}", flush=True)
 
     uvicorn.run("app.main:create_app", factory=True, host="127.0.0.1", port=PORT, log_level="warning")

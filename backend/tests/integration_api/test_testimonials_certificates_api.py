@@ -23,7 +23,7 @@ async def make_testimonial(client, **overrides) -> dict:
         "field_id": field["id"] if field else None,
         "tech_stack_id": tech["id"] if tech else None,
         "given_on": "2020-01-15",
-        "quote": f.i18n("He carried a huge part of it."),
+        "quote": f.i18n("<p>He carried a <strong>huge</strong> part of it.</p>"),
         "media_id": None,
         "verify_url": "https://www.linkedin.com/in/someone",
         "project_ids": [],
@@ -213,3 +213,24 @@ async def test_at_most_five_certificate_images(auth_client):
     response = await auth_client.post(CERTIFICATES, json=await certificate_payload(auth_client, images=images))
     assert response.status_code == 422
     assert ["body", "image_ids"] in [e["loc"] for e in response.json()["detail"]]
+
+
+async def test_quote_is_rich_text_cleaned_like_experience(auth_client):
+    company, field = await f.company(auth_client, "Quanta"), await f.field(auth_client)
+    html = '<p>Great <em>work</em>.<script>alert(1)</script></p><ul><li><a href="https://example.com" onclick="x()">Demo</a></li></ul>'
+    body = await make_testimonial(auth_client, company=company, field=field, quote=f.i18n(html))
+    quote = (await auth_client.post(TESTIMONIALS, json=body)).json()["quote"]["en"]
+    assert quote.startswith("<p>Great <em>work</em>.") and "<script" not in quote and "onclick" not in quote
+    assert 'href="https://example.com"' in quote and 'target="_blank"' in quote
+
+    # 1000 visible characters fit, whatever the tags around them; an empty editor means "no quote".
+    same = lambda text: {"en": text, "ru": text, "tg": text}  # noqa: E731
+    fits = await make_testimonial(auth_client, company=company, field=field, quote=same(f"<p><b>{'x' * 1000}</b></p>"))
+    assert (await auth_client.post(TESTIMONIALS, json=fits)).status_code == 201
+    too_long = await make_testimonial(auth_client, company=company, field=field, quote=same(f"<p>{'x' * 1001}</p>"))
+    assert ["body", "quote", "en"] in [
+        e["loc"] for e in (await auth_client.post(TESTIMONIALS, json=too_long)).json()["detail"]
+    ]
+    empty = await make_testimonial(auth_client, company=company, field=field, quote=same("<p></p>"))
+    created = await auth_client.post(TESTIMONIALS, json=empty)
+    assert created.status_code == 201 and created.json()["quote"] is None

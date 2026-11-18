@@ -171,6 +171,7 @@ export interface Testimonial {
   myRole: string;
   /** "YYYY-MM-DD" */
   date: string;
+  /** Rich text: sanitized HTML from the admin's editor; null when there is no quote. */
   quote: string | null;
   media: MediaItem | null;
   /** My projects it's about (internal links). */
@@ -231,8 +232,8 @@ export interface ProjectClient {
 export interface Project extends Omit<ProjectSummary, "stack"> {
   /** One or two sentences: search engines and link previews. */
   summary: string;
-  /** One string per paragraph (`**bold**` is supported). */
-  description: string[];
+  /** Rich text: sanitized HTML from the admin's editor (paragraphs, lists, bold, links…). */
+  description: string;
   /** "YYYY-MM" */
   start: string;
   client: ProjectClient;

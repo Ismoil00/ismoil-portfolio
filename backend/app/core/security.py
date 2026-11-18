@@ -25,7 +25,7 @@ def password_needs_rehash(stored_hash: str) -> bool:
     return _hasher.check_needs_rehash(stored_hash)
 
 
-# Checked when the email is unknown, so a wrong email takes as long as a wrong password.
+# Checked when the username is unknown, so a wrong username takes as long as a wrong password.
 DUMMY_PASSWORD_HASH = hash_password(secrets.token_urlsafe(16))
 
 

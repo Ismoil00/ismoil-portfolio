@@ -1,4 +1,4 @@
-"""Settings page: the translator choice and the password change."""
+"""Settings page: the translator choice and the username and password changes."""
 
 from pydantic import Field
 
@@ -18,3 +18,8 @@ class PanelSettingsOut(OutputModel):
 class PasswordChangeIn(InputModel):
     current_password: str = Field(min_length=1, max_length=1024)
     new_password: str = Field(max_length=1024)  # length rules are checked by the service, per field
+
+
+class UsernameChangeIn(InputModel):
+    current_password: str = Field(min_length=1, max_length=1024)
+    new_username: str = Field(max_length=254)  # the rules are checked by the service, per field

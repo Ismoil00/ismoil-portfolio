@@ -12,14 +12,16 @@ const linkClass =
  * don't look empty next to them. When the text is longer, "… Read all" sits at the end of
  * the 2nd line; once opened, "Show less" follows the last word.
  *
- * How "Read all" lands on line 2: the paragraph is capped at 2 lines (max-height: 2lh) inside
+ * The quote is rich text (sanitized HTML from the admin's editor: paragraphs, lists, bold…).
+ *
+ * How "Read all" lands on line 2: the text box is capped at 2 lines (max-height: 2lh) inside
  * a flex box (which makes that height usable for percentages). An empty float (::before) one
- * line shorter than the paragraph pushes the floated button down to the 2nd line, at the right;
+ * line shorter than the box pushes the floated button down to the 2nd line, at the right;
  * the text wraps around it.
  */
-export function ExpandableQuote({ text }: { text: string }) {
+export function ExpandableQuote({ html }: { html: string }) {
   const t = useTranslations("testimonials");
-  const ref = useRef<HTMLParagraphElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [overflows, setOverflows] = useState(false);
 
@@ -36,7 +38,7 @@ export function ExpandableQuote({ text }: { text: string }) {
     <figure className="mt-4">
       <blockquote className="relative flex pl-7">
         <LuQuote className="absolute left-0 top-0.5 size-4 text-accent/70" aria-hidden />
-        <p
+        <div
           ref={ref}
           className={`min-w-0 italic leading-relaxed text-muted ${
             open ? "" : "max-h-[2lh] overflow-hidden before:float-right before:h-[calc(100%-1lh)] before:content-['']"
@@ -50,16 +52,14 @@ export function ExpandableQuote({ text }: { text: string }) {
               <span className={linkClass}>{t("readAll")}</span>
             </button>
           )}
-          {text}
+          {/* Sanitized by the backend (allow-list) when it was saved in the admin. */}
+          <div className="rich-text" dangerouslySetInnerHTML={{ __html: html }} />
           {open && (
-            <>
-              {" "}
-              <button type="button" onClick={() => setOpen(false)} aria-expanded className={`ml-1 ${linkClass}`}>
-                {t("showLess")}
-              </button>
-            </>
+            <button type="button" onClick={() => setOpen(false)} aria-expanded className={`mt-1 ${linkClass}`}>
+              {t("showLess")}
+            </button>
           )}
-        </p>
+        </div>
       </blockquote>
     </figure>
   );

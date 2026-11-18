@@ -15,16 +15,16 @@ export function LoginForm({ next }: { next: string }) {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const email = String(form.get("email") ?? "").trim();
+    const username = String(form.get("username") ?? "").trim();
     const password = String(form.get("password") ?? "");
-    if (!email || !password) {
-      setError("Enter your email and password.");
+    if (!username || !password) {
+      setError("Enter your username and password.");
       return;
     }
     setPending(true);
     setError(null);
     try {
-      await api.post("/auth/login", { email, password });
+      await api.post("/auth/login", { username, password });
       // A full navigation, so every server component reads the new session cookie.
       window.location.href = next;
     } catch (err) {
@@ -35,8 +35,17 @@ export function LoginForm({ next }: { next: string }) {
 
   return (
     <form onSubmit={submit} noValidate className="space-y-4">
-      <Field label="Email" htmlFor="email" required>
-        <TextInput id="email" name="email" type="email" autoComplete="username" autoFocus required maxLength={254} />
+      <Field label="Username" htmlFor="username" required>
+        <TextInput
+          id="username"
+          name="username"
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
+          autoFocus
+          required
+          maxLength={32}
+        />
       </Field>
       <Field label="Password" htmlFor="password" required>
         <div className="relative">

@@ -1,17 +1,17 @@
 """Request/response bodies of the auth endpoints."""
 
-from pydantic import EmailStr, Field
+from pydantic import Field
 
 from app.schemas.common import InputModel, OutputModel
 
 
 class LoginIn(InputModel):
-    email: EmailStr = Field(max_length=254)
+    username: str = Field(min_length=1, max_length=64)
     password: str = Field(min_length=1, max_length=1024)
 
 
 class MeOut(OutputModel):
-    email: str
+    username: str
 
 
 class LoginOut(MeOut):

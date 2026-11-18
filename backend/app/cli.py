@@ -1,7 +1,7 @@
 """Command-line tasks.
 
 .venv/Scripts/python -m app.cli create-admin             create the admin user (or reset its password)
-.venv/Scripts/python -m app.cli delete-admin --email X   remove an admin user (and its sessions)
+.venv/Scripts/python -m app.cli delete-admin --username X   remove an admin user (and its sessions)
 .venv/Scripts/python -m app.cli cleanup                  delete unlinked uploads and expired auth records
 .venv/Scripts/python -m app.cli seed                     load the real content into an empty database
 .venv/Scripts/python -m app.cli import-selectors         add the seed's new development fields and technologies
@@ -24,7 +24,7 @@ from app.db.session import Database
 from app.repositories.auth import AuthRepository
 from app.repositories.media import MediaRepository
 from app.repositories.storage import create_storage
-from app.services.auth import AuthService, normalize_email
+from app.services.auth import AuthService, normalize_username
 from app.services.media import MediaService
 from app.services.seed import SeedError, add_missing_selectors, load_seed
 
@@ -40,27 +40,27 @@ async def open_session() -> AsyncIterator[AsyncSession]:
         await db.dispose()
 
 
-async def create_admin(email: str, password: str) -> None:
+async def create_admin(username: str, password: str) -> None:
     async with open_session() as session:
         try:
-            user = await AuthService(AuthRepository(session), get_settings()).create_admin(email, password)
+            user = await AuthService(AuthRepository(session), get_settings()).create_admin(username, password)
         except FieldErrors as error:
             for issue in error.errors:
                 print(f"  {issue['loc'][-1]}: {issue['msg']}", file=sys.stderr)
             raise SystemExit(1) from error
-        print(f"Admin ready: {user.email}. Any earlier sessions were signed out.")
+        print(f"Admin ready: {user.username}. Any earlier sessions were signed out.")
 
 
-async def delete_admin(email: str) -> None:
+async def delete_admin(username: str) -> None:
     async with open_session() as session:
         repo = AuthRepository(session)
-        user = await repo.get_user_by_email(normalize_email(email))
+        user = await repo.get_user_by_username(normalize_username(username))
         if user is None:
-            print(f"No admin with the email {email}.", file=sys.stderr)
+            print(f"No admin with the username {username}.", file=sys.stderr)
             raise SystemExit(1)
         await session.delete(user)
         await session.commit()
-        print(f"Deleted the admin {user.email}.")
+        print(f"Deleted the admin {user.username}.")
 
 
 async def cleanup() -> None:
@@ -97,9 +97,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     commands = parser.add_subparsers(dest="command", required=True)
     create = commands.add_parser("create-admin", help="create the admin user or reset its password")
-    create.add_argument("--email", help="asked for when left out")
+    create.add_argument("--username", help="asked for when left out")
     remove = commands.add_parser("delete-admin", help="remove an admin user")
-    remove.add_argument("--email", required=True)
+    remove.add_argument("--username", required=True)
     commands.add_parser("cleanup", help="delete unlinked uploads and expired auth records")
     seeding = commands.add_parser("seed", help="load the real content into an empty database")
     seeding.add_argument("--file", default="seed/content.json", help="relative to backend/")
@@ -110,14 +110,14 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.command == "create-admin":
-        email = args.email or input("Admin email: ").strip()
+        username = args.username or input("Admin username (3–32 Latin letters, digits, . _ -): ").strip()
         password = getpass.getpass("Password (at least 12 characters): ")
         if password != getpass.getpass("Repeat the password: "):
             print("The passwords don't match.", file=sys.stderr)
             raise SystemExit(1)
-        asyncio.run(create_admin(email, password))
+        asyncio.run(create_admin(username, password))
     elif args.command == "delete-admin":
-        asyncio.run(delete_admin(args.email))
+        asyncio.run(delete_admin(args.username))
     elif args.command == "cleanup":
         asyncio.run(cleanup())
     elif args.command == "seed":

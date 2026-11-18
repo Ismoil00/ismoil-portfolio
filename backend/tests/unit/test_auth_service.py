@@ -7,7 +7,7 @@ from app.core.security import hash_token
 from app.services.auth import AuthService
 from tests.unit.fakes import FakeAuthRepository, FakeClock
 
-EMAIL = "me@example.com"
+USERNAME = "site-admin"
 PASSWORD = "a-long-and-secret-passphrase"
 IP = "ip-hash-1"
 
@@ -25,21 +25,21 @@ def repo() -> FakeAuthRepository:
 @pytest.fixture
 async def service(repo, settings, clock) -> AuthService:
     service = AuthService(repo, settings, clock=clock)
-    await service.create_admin(EMAIL, PASSWORD)
+    await service.create_admin(USERNAME, PASSWORD)
     return service
 
 
-async def login(service: AuthService, password: str = PASSWORD, ip: str = IP, email: str = EMAIL):
-    return await service.login(email, password, ip_hash=ip, user_agent="pytest")
+async def login(service: AuthService, password: str = PASSWORD, ip: str = IP, username: str = USERNAME):
+    return await service.login(username, password, ip_hash=ip, user_agent="pytest")
 
 
 # --- creating the admin -------------------------------------------------------------------------
 
 
-async def test_create_admin_normalizes_email_and_hashes_password(repo, settings, clock):
+async def test_create_admin_normalizes_the_username_and_hashes_password(repo, settings, clock):
     service = AuthService(repo, settings, clock=clock)
-    user = await service.create_admin("  Me@Example.COM ", PASSWORD)
-    assert user.email == "me@example.com"
+    user = await service.create_admin("  Site-Admin ", PASSWORD)
+    assert user.username == "site-admin"
     assert user.password_hash.startswith("$argon2id$")
     assert PASSWORD not in user.password_hash
 
@@ -47,13 +47,20 @@ async def test_create_admin_normalizes_email_and_hashes_password(repo, settings,
 @pytest.mark.parametrize("password", ["short", "x" * 11, " " * 20])
 async def test_create_admin_rejects_weak_passwords(repo, settings, clock, password):
     with pytest.raises(FieldErrors):
-        await AuthService(repo, settings, clock=clock).create_admin(EMAIL, password)
+        await AuthService(repo, settings, clock=clock).create_admin(USERNAME, password)
+
+
+@pytest.mark.parametrize("username", ["ab", "x" * 33, "site admin", "me@example.com", "-admin", "админ"])
+async def test_create_admin_rejects_usernames_outside_the_rules(repo, settings, clock, username):
+    with pytest.raises(FieldErrors) as error:
+        await AuthService(repo, settings, clock=clock).create_admin(username, PASSWORD)
+    assert error.value.errors[0]["loc"][-1] == "username"
 
 
 async def test_create_admin_again_resets_password_and_signs_out_everywhere(service, repo):
     await login(service)
     assert repo.sessions
-    await service.create_admin(EMAIL, "another-long-passphrase")
+    await service.create_admin(USERNAME, "another-long-passphrase")
     assert not repo.sessions
     with pytest.raises(Unauthorized):
         await login(service)
@@ -65,7 +72,7 @@ async def test_create_admin_again_resets_password_and_signs_out_everywhere(servi
 
 async def test_login_returns_random_tokens_and_stores_only_their_hashes(service, repo):
     result = await login(service)
-    assert result.user.email == EMAIL
+    assert result.user.username == USERNAME
     assert result.session_token and result.csrf_token
     stored = repo.sessions[hash_token(result.session_token)]
     assert stored.csrf_hash == hash_token(result.csrf_token)
@@ -73,15 +80,15 @@ async def test_login_returns_random_tokens_and_stores_only_their_hashes(service,
     assert repo.attempts[-1][1] is True
 
 
-async def test_login_is_case_insensitive_for_email(service):
-    assert (await login(service, email="ME@example.com")).user.email == EMAIL
+async def test_login_is_case_insensitive_for_the_username(service):
+    assert (await login(service, username=" Site-ADMIN ")).user.username == USERNAME
 
 
-@pytest.mark.parametrize(("email", "password"), [(EMAIL, "wrong-password"), ("nobody@example.com", PASSWORD)])
-async def test_login_failures_share_one_generic_error(service, repo, email, password):
+@pytest.mark.parametrize(("username", "password"), [(USERNAME, "wrong-password"), ("nobody", PASSWORD)])
+async def test_login_failures_share_one_generic_error(service, repo, username, password):
     with pytest.raises(Unauthorized) as error:
-        await login(service, password=password, email=email)
-    assert error.value.message == "Wrong email or password"
+        await login(service, password=password, username=username)
+    assert error.value.message == "Wrong username or password"
     assert repo.attempts[-1] == (IP, False, repo.attempts[-1][2])
 
 
@@ -125,7 +132,7 @@ async def test_login_records_last_login_time(service, clock):
 async def test_authenticate_accepts_a_fresh_session(service):
     result = await login(service)
     session = await service.authenticate(result.session_token)
-    assert session.user.email == EMAIL
+    assert session.user.username == USERNAME
 
 
 @pytest.mark.parametrize("token", [None, "", "made-up-token"])

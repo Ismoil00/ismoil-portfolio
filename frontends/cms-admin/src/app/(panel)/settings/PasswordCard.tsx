@@ -34,7 +34,7 @@ type Values = z.infer<typeof schema>;
 const EMPTY: Values = { current_password: "", new_password: "", repeat_password: "" };
 
 /** Change the admin password. Every other browser is signed out; this one stays signed in. */
-export function PasswordCard({ email }: { email: string }) {
+export function PasswordCard({ username }: { username: string }) {
   const toast = useToast();
   const [show, setShow] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -71,7 +71,7 @@ export function PasswordCard({ email }: { email: string }) {
     >
       <form onSubmit={handleSubmit(save)} noValidate className="max-w-md space-y-4">
         {/* Lets password managers know which account this is. */}
-        <input type="email" name="username" autoComplete="username" value={email} readOnly hidden />
+        <input type="text" name="username" autoComplete="username" value={username} readOnly hidden />
         <Field label="Current password" htmlFor="current-password" required error={errors.current_password?.message}>
           <TextInput
             id="current-password"

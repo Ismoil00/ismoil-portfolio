@@ -22,8 +22,7 @@ from app.schemas.media import MediaOut
 
 # Defined here so the "kind" isn't read as a type name.
 RichText5000 = I18nRequired[5000, "rich"]
-Paragraphs5000 = I18nRequired[5000, "multiline"]
-OptionalParagraphs1000 = I18nOptional[1000, "multiline"]
+OptionalRichText1000 = I18nOptional[1000, "rich"]
 
 
 def _blank_to_none(value: object) -> object:
@@ -112,7 +111,7 @@ class ProjectIn(InputModel):
     title: I18nRequired[200]
     # The page address (/projects/<slug>). Made from the English title when left out.
     slug: Annotated[str | None, BeforeValidator(_blank_to_none), AfterValidator(lambda v: v and _slug(v))] = None
-    description: Paragraphs5000
+    description: RichText5000  # sanitized HTML, like the experience description
     start: Month
     end: Month
     client_kind: ClientKind
@@ -158,7 +157,7 @@ class TestimonialIn(InputModel):
     field_id: uuid.UUID | None = None
     tech_stack_id: uuid.UUID | None = None
     given_on: Annotated[date, AfterValidator(_not_future)]
-    quote: OptionalParagraphs1000 = None
+    quote: OptionalRichText1000 = None  # sanitized HTML; an empty editor in all 3 languages = no quote
     media_id: uuid.UUID | None = None
     verify_url: HttpUrl
     project_ids: UniqueIds() = []

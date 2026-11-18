@@ -1,14 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
 import { ADMIN_STATE, admin, adminCredentials } from "../support/env";
 
-// Runs last (its own project in playwright.config.ts): a password change signs out every other browser,
-// including the session the other tests share.
+// Runs last (its own project in playwright.config.ts): a username or password change signs out every
+// other browser, including the session the other tests share.
 
 const NEW_PASSWORD = "e2e-changed-passphrase-2026";
+const NEW_USERNAME = "e2e-owner";
 
-async function signIn(page: Page, password: string) {
+async function signIn(page: Page, password: string, username = adminCredentials().username) {
   await page.goto(admin("/login"));
-  await page.locator("#email").fill(adminCredentials().email);
+  await page.locator("#username").fill(username);
   await page.locator("#password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
 }
@@ -60,5 +61,62 @@ test("the admin password changes in Settings: other browsers are signed out, the
     await expect(page).toHaveURL(admin("/hero"));
   } finally {
     await changePassword(page, NEW_PASSWORD, password);
+  }
+});
+
+async function changeUsername(page: Page, password: string, next: string) {
+  await page.goto(admin("/settings"));
+  await page.locator("#new-username").fill(next);
+  await page.locator("#username-password").fill(password);
+  await page.getByRole("button", { name: "Change username" }).click();
+  await expect(page.getByText("Username changed. Other browsers were signed out.")).toBeVisible();
+}
+
+test("the admin username changes in Settings: other browsers are signed out, only the new one signs in", async ({ page, browser }) => {
+  const { username, password } = adminCredentials();
+  await signIn(page, password);
+  await expect(page).toHaveURL(admin("/hero"));
+  const other = await browser.newContext();
+  const otherPage = await other.newPage();
+  await signIn(otherPage, password);
+  await expect(otherPage).toHaveURL(admin("/hero"));
+
+  // Mistakes are caught before anything is sent.
+  await page.goto(admin("/settings"));
+  await expect(page.getByText(`Current username: ${username}`)).toBeVisible();
+  await page.locator("#new-username").fill("-bad name");
+  await page.locator("#username-password").fill(password);
+  await page.getByRole("button", { name: "Change username" }).click();
+  await expect(page.getByText("Use 3–32 Latin letters, digits, dots, hyphens or underscores")).toBeVisible();
+  await page.locator("#new-username").fill(username.toUpperCase());
+  await page.getByRole("button", { name: "Change username" }).click();
+  await expect(page.getByText("Pick a username different from the current one")).toBeVisible();
+
+  await changeUsername(page, password, NEW_USERNAME.toUpperCase()); // kept in lowercase
+  try {
+    await expect(page.getByText(`Current username: ${NEW_USERNAME}`)).toBeVisible();
+    await expect(page.getByTitle(NEW_USERNAME, { exact: true })).not.toHaveCount(0); // "Signed in as" in the sidebar
+
+    // The browser signed in before the change is signed out; this one isn't.
+    await otherPage.goto(admin("/hero"));
+    await expect(otherPage).toHaveURL(/\/login/);
+    await page.goto(admin("/about"));
+    await expect(page.getByRole("heading", { name: "About me" })).toBeVisible();
+
+    // The old username no longer signs in, the new one does (in any letter case).
+    await page.getByRole("button", { name: "Sign out" }).first().click();
+    await expect(page).toHaveURL(/\/login/);
+    await signIn(page, password, username);
+    await expect(page.getByText("Wrong username or password")).toBeVisible();
+    await signIn(page, password, NEW_USERNAME.toUpperCase());
+    await expect(page).toHaveURL(admin("/hero"));
+  } finally {
+    // Put the E2E admin's username back (signing in again first if the test stopped while signed out).
+    if (/\/login/.test(page.url())) {
+      await signIn(page, password, NEW_USERNAME);
+      await expect(page).not.toHaveURL(/\/login/);
+    }
+    await changeUsername(page, password, username);
+    await other.close();
   }
 });

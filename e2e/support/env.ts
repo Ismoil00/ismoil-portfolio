@@ -24,7 +24,7 @@ export const admin = (pathname: string) => `${ADMIN_URL}${pathname}`;
 export const ADMIN_STATE = path.join(TMP_DIR, "admin-state.json");
 
 /** The E2E admin, created with a new random password on every run by scripts/backend.py. */
-export function adminCredentials(): { email: string; password: string } {
+export function adminCredentials(): { username: string; password: string } {
   return JSON.parse(readFileSync(path.join(TMP_DIR, "admin.json"), "utf-8"));
 }
 

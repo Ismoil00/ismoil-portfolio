@@ -1,4 +1,5 @@
-"""Admin: the Settings page — which translator helps with Russian and Tajik, and changing the password."""
+"""Admin: the Settings page — which translator helps with Russian and Tajik, and changing the username
+and the password."""
 
 from typing import Annotated
 
@@ -7,7 +8,7 @@ from fastapi import APIRouter, Depends, Request, status
 from app.api.auth_deps import AdminDep, AuthServiceDep
 from app.api.deps import IpHashDep, SessionDep
 from app.repositories.settings import SettingsRepository
-from app.schemas.settings import PanelSettingsIn, PanelSettingsOut, PasswordChangeIn
+from app.schemas.settings import PanelSettingsIn, PanelSettingsOut, PasswordChangeIn, UsernameChangeIn
 from app.services.settings import PanelSettingsService
 
 router = APIRouter(prefix="/settings", tags=["admin: settings"])
@@ -35,3 +36,8 @@ async def update_settings(data: PanelSettingsIn, service: Service) -> PanelSetti
 @router.put("/password", status_code=status.HTTP_204_NO_CONTENT)
 async def change_password(data: PasswordChangeIn, admin: AdminDep, auth: AuthServiceDep, ip_hash: IpHashDep) -> None:
     await auth.change_password(admin, data.current_password, data.new_password, ip_hash=ip_hash)
+
+
+@router.put("/username", status_code=status.HTTP_204_NO_CONTENT)
+async def change_username(data: UsernameChangeIn, admin: AdminDep, auth: AuthServiceDep, ip_hash: IpHashDep) -> None:
+    await auth.change_username(admin, data.current_password, data.new_username, ip_hash=ip_hash)

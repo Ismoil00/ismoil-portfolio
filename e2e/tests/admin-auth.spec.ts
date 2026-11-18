@@ -10,7 +10,7 @@ test.describe("Admin sign-in", () => {
 
   test("a wrong password is refused", async ({ page }) => {
     await page.goto(admin("/login"));
-    await page.locator("#email").fill(adminCredentials().email);
+    await page.locator("#username").fill(adminCredentials().username);
     await page.locator("#password").fill("not-the-right-password");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page.getByRole("alert")).toBeVisible();
@@ -18,9 +18,9 @@ test.describe("Admin sign-in", () => {
   });
 
   test("signing in opens the requested page, the session survives a reload, signing out ends it", async ({ page }) => {
-    const { email, password } = adminCredentials();
+    const { username, password } = adminCredentials();
     await page.goto(admin("/about"));
-    await page.locator("#email").fill(email);
+    await page.locator("#username").fill(username);
     await page.locator("#password").fill(password);
     await page.getByRole("button", { name: "Sign in" }).click();
 

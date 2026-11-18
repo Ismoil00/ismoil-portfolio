@@ -7,12 +7,14 @@ import { Tooltip } from "@/components/ui/Tooltip";
 import { TechChip } from "@/components/tech/TechChip";
 import { ProjectCover } from "./ProjectCover";
 import { ProjectLinks } from "./ProjectLinks";
+import { ProjectCoverButton } from "./ProjectCoverButton";
 
 /** Extra product types shown as icons after the first one, before the rest collapse into "+N". */
 const MAX_ICONS = 3;
 
 /**
- * Project card — used on the home page and on /projects. The whole card opens the project page.
+ * Project card — used on the home page and on /projects. The whole card opens the project page,
+ * except one button on the cover: play (video cover) or expand (image cover) opens it full size.
  *
  * Layout: edge-to-edge thumbnail (fixed height, centered crop) with the order number on it,
  * then product type + release year, the title, up to 3 technologies, a divider, and the
@@ -52,6 +54,13 @@ export function ProjectCard({ project, index }: { project: ProjectSummary; index
           >
             {String(index + 1).padStart(2, "0")}
           </span>
+          {project.cover && (
+            <ProjectCoverButton
+              cover={project.cover}
+              title={project.title}
+              label={t(project.cover.type === "video" ? "playVideo" : "openImage", { name: project.title })}
+            />
+          )}
         </div>
 
         <div className="flex flex-1 flex-col p-6">

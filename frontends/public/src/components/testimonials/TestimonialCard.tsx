@@ -73,7 +73,7 @@ export function TestimonialCard({ item }: { item: Testimonial }) {
               <span className={detailClass}>{item.myRole}</span>
             </p>
           )}
-          {item.quote && <ExpandableQuote text={item.quote} />}
+          {item.quote && <ExpandableQuote html={item.quote} />}
 
           <div className="mt-auto pt-5">
             {item.projects.length > 0 && (

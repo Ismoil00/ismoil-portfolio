@@ -102,6 +102,8 @@
     "liveHint": "Open the live preview in a new tab",
     "liveClosed": "No live preview available",
     "open": "Open project: {name}",
+    "playVideo": "Play the video of {name}",
+    "openImage": "Open the image of {name} full size",
     "viewAll": "View all projects",
     "viewAllCount": "{count, plural, one {# project} other {# projects}}",
     "inDevelopment": "In development"
@@ -179,6 +181,12 @@
     "clear": "Clear",
     "prevYear": "Previous year",
     "nextYear": "Next year",
+    "prevYears": "Previous 12 years",
+    "nextYears": "Next 12 years",
+    "chooseYear": "Choose a year",
+    "openCalendar": "Open the calendar",
+    "calendar": "Calendar",
+    "typeHint": "Or type it: 03.2024 or Mar 2024",
     "showing": "Showing {shown} of {total}",
     "loadMore": "Show {count} more",
     "loading": "Loading…"

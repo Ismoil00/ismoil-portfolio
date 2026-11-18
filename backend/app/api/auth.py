@@ -34,10 +34,10 @@ async def login(
 ) -> LoginOut:
     check_origin(request, settings.admin_origins)
     result = await service.login(
-        body.email, body.password, ip_hash=ip_hash, user_agent=request.headers.get("user-agent", "")
+        body.username, body.password, ip_hash=ip_hash, user_agent=request.headers.get("user-agent", "")
     )
     _set_cookies(response, settings, result.session_token, result.csrf_token)
-    return LoginOut(email=result.user.email, csrf_token=result.csrf_token)
+    return LoginOut(username=result.user.username, csrf_token=result.csrf_token)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
@@ -52,4 +52,4 @@ async def logout(
 
 @router.get("/me", response_model=MeOut)
 async def me(admin: AdminDep) -> MeOut:
-    return MeOut(email=admin.user.email)
+    return MeOut(username=admin.user.username)

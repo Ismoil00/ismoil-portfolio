@@ -12,7 +12,7 @@ from app.db.base import Base, UUIDPk
 class AdminUser(UUIDPk, Base):
     __tablename__ = "admin_users"
 
-    email: Mapped[str] = mapped_column(String(254), unique=True)
+    username: Mapped[str] = mapped_column(String(32), unique=True)  # lowercase; rules in services/auth.py
     password_hash: Mapped[str] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

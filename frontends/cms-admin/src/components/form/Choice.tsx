@@ -1,27 +1,44 @@
 "use client";
 
 import type { InputHTMLAttributes, ReactNode } from "react";
-import { LuCheck } from "react-icons/lu";
+import { LuBan, LuCheck } from "react-icons/lu";
+import { Tooltip } from "@/components/ui/Tooltip";
 
-/** A checkbox with a label and an optional line of explanation. */
+/**
+ * A checkbox with a label and an optional line of explanation.
+ * `blockedReason`: why it can't be ticked right now. While disabled, hovering it turns the box into
+ * a "not allowed" sign and shows the reason in a tooltip (screen readers get it as text).
+ */
 export function Checkbox({
   label,
   description,
+  blockedReason,
   className = "",
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & { label: ReactNode; description?: ReactNode }) {
-  return (
-    <label className={`group flex cursor-pointer items-start gap-3 ${props.disabled ? "cursor-not-allowed opacity-60" : ""} ${className}`}>
+}: InputHTMLAttributes<HTMLInputElement> & { label: ReactNode; description?: ReactNode; blockedReason?: string }) {
+  const blocked = Boolean(props.disabled && blockedReason);
+  const dim = props.disabled ? "opacity-60" : "";
+  const box = (
+    <label className={`group flex items-start gap-3 ${props.disabled ? "cursor-not-allowed" : "cursor-pointer"} ${className}`}>
       <span className="relative mt-0.5 grid size-5 shrink-0 place-items-center">
-        <input type="checkbox" {...props} className="peer absolute inset-0 cursor-[inherit] appearance-none rounded-md border border-line-strong bg-tint/[0.03] transition-colors checked:border-accent checked:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent group-hover:border-accent/60" />
+        <input
+          type="checkbox"
+          {...props}
+          className={`peer absolute inset-0 cursor-[inherit] appearance-none rounded-md border border-line-strong bg-tint/[0.03] transition-[opacity,border-color,background-color] checked:border-accent checked:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+            props.disabled ? "" : "group-hover:border-accent/60"
+          } ${blocked ? "opacity-60 group-hover:opacity-0" : dim}`}
+        />
         <LuCheck className="pointer-events-none relative size-3.5 text-bg opacity-0 transition-opacity peer-checked:opacity-100 light:text-white" strokeWidth={3} />
+        {blocked && <LuBan aria-hidden className="pointer-events-none absolute size-5 text-danger opacity-0 transition-opacity group-hover:opacity-100" />}
       </span>
-      <span>
+      <span className={dim}>
         <span className="text-sm text-fg">{label}</span>
         {description && <span className="mt-0.5 block text-xs text-subtle">{description}</span>}
+        {blocked && <span className="sr-only">{blockedReason}</span>}
       </span>
     </label>
   );
+  return blocked ? <Tooltip label={blockedReason!}>{box}</Tooltip> : box;
 }
 
 export interface RadioCardOption<T extends string> {

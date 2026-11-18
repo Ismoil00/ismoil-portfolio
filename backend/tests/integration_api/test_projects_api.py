@@ -1,10 +1,12 @@
-"""Projects: slug, client, traffic, private ⇔ no links, gallery limits and cover, cleanup of files."""
+"""Projects: slug, client, traffic, private ⇔ no links, gallery limits and cover (an image or a video),
+rich-text description, cleanup of files."""
 
 import pytest
 
 from tests.integration_api import factories as f
 
 URL = "/api/v1/admin/projects"
+DESCRIPTION = "<p>Exports <strong>colors</strong> and fonts.</p><ul><li>Second point</li></ul>"
 
 
 async def payload(client, **overrides) -> dict:
@@ -12,7 +14,7 @@ async def payload(client, **overrides) -> dict:
     tech = overrides.pop("tech", None) or await f.tech(client)
     return {
         "title": f.i18n("Design tokens plugin"),
-        "description": f.i18n("Exports colors and fonts.\n\nSecond paragraph."),
+        "description": f.i18n(DESCRIPTION),
         "start": "2021-10",
         "end": "2021-12",
         "client_kind": "self",
@@ -35,7 +37,7 @@ async def test_create_read_update_delete(auth_client):
     assert created.status_code == 201, created.text
     project = created.json()
     assert project["slug"] == "design-tokens-plugin"
-    assert project["description"]["en"] == "Exports colors and fonts.\n\nSecond paragraph."
+    assert project["description"]["en"] == DESCRIPTION
     assert project["type_ids"] == body["type_ids"] and project["tech_ids"] == body["tech_ids"]
     assert (await auth_client.get(f"{URL}/{project['id']}")).json() == project
 
@@ -119,7 +121,15 @@ async def test_gallery_order_cover_and_limits(auth_client):
     assert project["media"][0]["poster_url"]
     assert project["cover_id"] == images[0]["id"]
 
-    # The cover must be one of the gallery's images.
+    # A video can be the cover too (the site plays it right from the card).
+    by_video = await auth_client.put(
+        f"{URL}/{project['id']}",
+        json=await payload(auth_client, type=web, tech=tech, media_ids=media_ids, cover_id=video["id"]),
+    )
+    assert by_video.status_code == 200, by_video.text
+    assert by_video.json()["cover_id"] == video["id"]
+
+    # The cover must be one of the gallery's files.
     bad_cover = await auth_client.post(
         URL, json=await payload(auth_client, type=web, tech=tech, media_ids=[images[1]["id"]], cover_id=images[0]["id"])
     )
@@ -182,3 +192,28 @@ async def test_validation(auth_client, override, loc):
     response = await auth_client.post(URL, json=await payload(auth_client, **override))
     assert response.status_code == 422
     assert loc in [e["loc"] for e in response.json()["detail"]], response.json()
+
+
+async def test_description_is_rich_text_cleaned_like_experience(auth_client):
+    html = (
+        "<p>Built <em>fast</em>.<script>alert(1)</script></p>"
+        '<ol><li><a href="https://example.com" onclick="x()">Demo</a></li></ol>'
+    )
+    project = (await auth_client.post(URL, json=await payload(auth_client, description=f.i18n(html)))).json()
+    saved = project["description"]["en"]
+    assert "<script" not in saved and "onclick" not in saved
+    assert saved.startswith("<p>Built <em>fast</em>.")
+    assert 'href="https://example.com"' in saved and 'target="_blank"' in saved
+
+    # The 5000 limit counts the visible text, not the tags.
+    same = lambda text: {"en": text, "ru": text, "tg": text}  # noqa: E731
+    web, tech = await f.product_type(auth_client, "Tool"), await f.tech(auth_client, "Go")
+    fits = await payload(
+        auth_client, type=web, tech=tech, title=f.i18n("Long"), description=same(f"<p><b>{'x' * 5000}</b></p>")
+    )
+    assert (await auth_client.post(URL, json=fits)).status_code == 201
+    too_long = await payload(
+        auth_client, type=web, tech=tech, title=f.i18n("Longer"), description=same(f"<p>{'x' * 5001}</p>")
+    )
+    response = await auth_client.post(URL, json=too_long)
+    assert ["body", "description", "en"] in [e["loc"] for e in response.json()["detail"]]

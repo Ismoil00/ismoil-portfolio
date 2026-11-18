@@ -200,8 +200,9 @@ class ProjectService(_ContentService[Project]):
             errors.append((("media_ids",), f"At most {MAX_PROJECT_IMAGES} images"))
         if len(videos) > MAX_PROJECT_VIDEOS:
             errors.append((("media_ids",), f"At most {MAX_PROJECT_VIDEOS} videos"))
-        if data.cover_id is not None and data.cover_id not in {m.id for m in images}:
-            errors.append((("cover_id",), "Pick the cover from the gallery's images"))
+        # The cover is any gallery file: an image, or a video the site plays right from the card.
+        if data.cover_id is not None and data.cover_id not in {m.id for m in files}:
+            errors.append((("cover_id",), "Pick the cover from the gallery"))
         if errors:
             raise FieldErrors(errors)
 
