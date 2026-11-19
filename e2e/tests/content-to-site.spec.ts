@@ -15,6 +15,7 @@ test.describe("Admin edits reach the public site", () => {
 
     await page.goto(admin("/about"));
     const title = englishField(page, "Title");
+    await expect(title).not.toHaveValue(""); // the form has loaded its saved values
     const original = await title.inputValue();
     const edited = "Engineer checked end to end";
 
@@ -29,6 +30,9 @@ test.describe("Admin edits reach the public site", () => {
       await expect(page.locator("#about h2").first()).toHaveText(russianTitle);
     } finally {
       await page.goto(admin("/about"));
+      // Wait until the form shows the saved value: typing earlier is undone when the form finishes loading
+      // (seen on the slower pipeline machines), and Save then has nothing to save.
+      await expect(englishField(page, "Title")).toHaveValue(edited);
       await englishField(page, "Title").fill(original);
       await saveChanges(page);
       await expect(page.getByText("About saved.")).toBeVisible();

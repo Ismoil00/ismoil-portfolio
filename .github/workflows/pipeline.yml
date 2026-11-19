@@ -47,7 +47,7 @@ jobs:
       any: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.changes != '[]' }}
     steps:
       - uses: actions/checkout@v5
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -156,10 +156,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - name: Backend image
         if: needs.changes.outputs.backend == 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: backend
           push: false
@@ -167,7 +167,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=backend
       - name: Public site image
         if: needs.changes.outputs.public == 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: frontends/public
           push: false
@@ -175,7 +175,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=public
       - name: Admin panel image
         if: needs.changes.outputs.admin == 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: frontends/cms-admin
           push: false
@@ -237,7 +237,7 @@ jobs:
         run: npm test
       - name: Keep the report when something fails
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-report
           path: |
