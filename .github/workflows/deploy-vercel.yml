@@ -46,6 +46,11 @@ jobs:
         if: inputs.app == 'backend'
         with:
           python-version: "3.13"
+      # Vercel's Python builder installs the backend's packages with uv; on Vercel's own machines uv is
+      # already there, on GitHub's it has to be installed first.
+      - name: Install uv
+        if: inputs.app == 'backend'
+        run: pip install uv==0.13.7
       - name: Install the Vercel CLI
         run: npm install --global vercel@65.11.0
       - name: Download the project's settings and production environment variables
