@@ -4,17 +4,26 @@ from collections.abc import AsyncIterator
 
 from sqlalchemy import URL
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 
 class Database:
     """Owns the connection pool; one per app (created in the app's lifespan)."""
 
     def __init__(
-        self, url: URL | str, *, echo: bool = False, connect_args: dict | None = None, hide_parameters: bool = False
+        self,
+        url: URL | str,
+        *,
+        echo: bool = False,
+        connect_args: dict | None = None,
+        hide_parameters: bool = False,
+        null_pool: bool = False,
     ) -> None:
         # hide_parameters: logs show the SQL but not the values (tokens, personal data) — used in production.
+        # null_pool: behind PgBouncer (Neon's pooled address) the pooler keeps the connections, not the app.
+        pooling: dict = {"poolclass": NullPool} if null_pool else {"pool_pre_ping": True}
         self.engine: AsyncEngine = create_async_engine(
-            url, echo=echo, pool_pre_ping=True, connect_args=connect_args or {}, hide_parameters=hide_parameters
+            url, echo=echo, connect_args=connect_args or {}, hide_parameters=hide_parameters, **pooling
         )
         self.sessionmaker = async_sessionmaker(self.engine, expire_on_commit=False)
 

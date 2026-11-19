@@ -1,8 +1,10 @@
 """The public contact form (the only write the public site makes) and the admin messages table."""
 
 import pytest
+from pydantic import SecretStr
 
-from tests.integration_api.conftest import make_client
+from app.main import create_app
+from tests.integration_api.conftest import _TestDatabase, make_client
 
 CONTACT = "/api/v1/public/contact"
 MESSAGES = "/api/v1/admin/messages"
@@ -91,3 +93,20 @@ async def test_contact_form_has_a_site_wide_limit(app, settings):
             assert (await visitor.post(CONTACT, json=VALID)).status_code == 201
     async with make_client(app, ip="198.51.100.250") as late:
         assert (await late.post(CONTACT, json=VALID)).status_code == 429
+
+
+async def test_the_site_server_passes_each_visitor_ip_with_its_token(settings, db_session, storage_dir):
+    """On Vercel every message arrives from the public site's server, so it names the visitor itself."""
+    hosted = settings.model_copy(
+        update={"internal_api_token": SecretStr("site-token"), "client_ip_header": "x-real-ip"}
+    )
+    app = create_app(hosted, database=_TestDatabase(db_session))
+
+    def sent_for(visitor_ip: str) -> dict[str, str]:
+        return {"X-Internal-Token": "site-token", "X-Visitor-IP": visitor_ip, "X-Real-IP": "34.120.0.1"}
+
+    async with make_client(app, ip="10.0.0.1") as site:
+        for _ in range(settings.contact_max_per_hour):
+            assert (await site.post(CONTACT, json=VALID, headers=sent_for("203.0.113.1"))).status_code == 201
+        assert (await site.post(CONTACT, json=VALID, headers=sent_for("203.0.113.1"))).status_code == 429
+        assert (await site.post(CONTACT, json=VALID, headers=sent_for("203.0.113.2"))).status_code == 201

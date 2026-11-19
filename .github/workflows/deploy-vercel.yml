@@ -1,0 +1,57 @@
+# Builds one app with the Vercel CLI on GitHub's machine and uploads the result to Vercel as the
+# production deployment. Called by pipeline.yml once per app (backend, public, admin).
+#
+# Each Vercel project knows its own folder (Settings → Build and Deployment → Root Directory), so the CLI
+# runs from the repository root. Vercel's own Git deployments are off (vercel.json → git.deploymentEnabled),
+# so a push deploys only through here, and only after the checks passed.
+
+name: Deploy to Vercel
+
+on:
+  workflow_call:
+    inputs:
+      app:
+        description: backend, public or admin (for the job name)
+        required: true
+        type: string
+      project-id:
+        description: The Vercel project's ID (prj_…)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Vercel — ${{ inputs.app }}
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    # One production deployment at a time per app; a newer one waits instead of cancelling.
+    concurrency:
+      group: production-${{ inputs.app }}
+      cancel-in-progress: false
+    env:
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ inputs.project-id }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v6
+        if: inputs.app == 'backend'
+        with:
+          python-version: "3.13"
+      - name: Install the Vercel CLI
+        run: npm install --global vercel@65.11.0
+      - name: Download the project's settings and production environment variables
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - name: Build
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+      - name: Deploy
+        id: deploy
+        run: echo "url=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")" >> "$GITHUB_OUTPUT"

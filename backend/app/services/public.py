@@ -12,6 +12,7 @@ from app.models import Certificate, Company, Experience, Institute, Media, Proje
 from app.repositories.public import ListQuery, PublicRepository
 from app.repositories.storage import Storage
 from app.schemas import public as s
+from app.services.media import media_url
 
 CHANNEL_LABELS = {"email": "Email", "telegram": "Telegram", "whatsapp": "WhatsApp", "linkedin": "LinkedIn"}
 CARD_STACK = 3
@@ -57,7 +58,7 @@ class PublicService:
     # --- building blocks ------------------------------------------------------------------------
 
     def url(self, media: Media | None) -> str | None:
-        return self.storage.url(media.storage_key) if media else None
+        return media_url(self.storage, media)
 
     def media_item(self, media: Media) -> s.MediaItem:
         video = media.content_type.startswith("video/")

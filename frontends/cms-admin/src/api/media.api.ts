@@ -1,5 +1,6 @@
 import type { Media } from "@/types/api";
-import { api } from "./client";
+import { api, csrfToken } from "./client";
+import { UserFacingError } from "./errors";
 
 /** Kinds of upload; each has its own allowed types and size limit on the backend. */
 export type MediaPurpose =
@@ -31,11 +32,24 @@ export function checkFile(file: File, purpose: MediaPurpose): string | null {
   return null;
 }
 
-export async function uploadMedia(
-  file: File,
-  purpose: MediaPurpose,
-  options: { poster?: Blob | null; width?: number; height?: number; onProgress?: (fraction: number) => void } = {},
-): Promise<Media> {
+type UploadOptions = { poster?: Blob | null; width?: number; height?: number; onProgress?: (fraction: number) => void };
+
+/**
+ * Kinds of file that may be bigger than one request can carry on Vercel (4.5 MB). With Vercel Blob
+ * (NEXT_PUBLIC_DIRECT_UPLOADS=true) they go from the browser straight to Blob; the backend then checks
+ * them like any other upload. Everything else, and everything locally, goes through the backend.
+ */
+const DIRECT_PURPOSES: ReadonlySet<MediaPurpose> = new Set([
+  "resume",
+  "project_image",
+  "project_video",
+  "testimonial_image",
+  "testimonial_video",
+]);
+const directUploads = process.env.NEXT_PUBLIC_DIRECT_UPLOADS === "true";
+
+export async function uploadMedia(file: File, purpose: MediaPurpose, options: UploadOptions = {}): Promise<Media> {
+  if (directUploads && DIRECT_PURPOSES.has(purpose)) return uploadDirect(file, purpose, options);
   const body = new FormData();
   body.append("purpose", purpose);
   body.append("file", file);
@@ -45,6 +59,34 @@ export async function uploadMedia(
   const { data } = await api.post<Media>("/admin/media", body, {
     onUploadProgress: (e) => e.total && options.onProgress?.(e.loaded / e.total),
   });
+  return data;
+}
+
+/** Upload to Vercel Blob (staging path), then let the backend check the file and keep it. */
+async function uploadDirect(file: File, purpose: MediaPurpose, options: UploadOptions): Promise<Media> {
+  const pathname = `incoming/${purpose}/${crypto.randomUUID().replaceAll("-", "")}`;
+  const csrf = csrfToken();
+  try {
+    const { upload } = await import("@vercel/blob/client"); // loaded only when it's used
+    await upload(pathname, file, {
+      access: "public",
+      handleUploadUrl: "/blob/upload",
+      headers: csrf ? { "X-CSRF-Token": csrf } : undefined,
+      contentType: file.type || "application/octet-stream",
+      multipart: file.size > 20 * MB,
+      onUploadProgress: ({ percentage }) => options.onProgress?.((percentage / 100) * 0.95),
+    });
+  } catch {
+    throw new UserFacingError(`Couldn't upload “${file.name}”. Check the connection and try again.`);
+  }
+  const body = new FormData();
+  body.append("pathname", pathname);
+  body.append("filename", file.name);
+  if (options.poster) body.append("poster", options.poster, "poster.jpg");
+  if (options.width) body.append("width", String(options.width));
+  if (options.height) body.append("height", String(options.height));
+  const { data } = await api.post<Media>("/admin/media/direct", body);
+  options.onProgress?.(1);
   return data;
 }
 

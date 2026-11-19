@@ -36,6 +36,7 @@ def create_app(settings: Settings | None = None, *, database: Database | None = 
                 echo=settings.db_echo,
                 connect_args=settings.connect_args(),
                 hide_parameters=settings.is_production,
+                null_pool=settings.db_behind_pooler(),
             )
         if isinstance(app.state.storage, S3Storage):
             await app.state.storage.ensure_bucket()

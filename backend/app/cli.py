@@ -5,6 +5,7 @@
 .venv/Scripts/python -m app.cli cleanup                  delete unlinked uploads and expired auth records
 .venv/Scripts/python -m app.cli seed                     load the real content into an empty database
 .venv/Scripts/python -m app.cli import-selectors         add the seed's new development fields and technologies
+.venv/Scripts/python -m app.cli copy-media               copy the local uploads to STORAGE_BACKEND (s3 or blob)
 """
 
 import argparse
@@ -14,7 +15,6 @@ import json
 import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,7 +23,8 @@ from app.core.errors import FieldErrors
 from app.db.session import Database
 from app.repositories.auth import AuthRepository
 from app.repositories.media import MediaRepository
-from app.repositories.storage import create_storage
+from app.repositories.storage import LocalStorage, create_storage
+from app.services import maintenance
 from app.services.auth import AuthService, normalize_username
 from app.services.media import MediaService
 from app.services.seed import SeedError, add_missing_selectors, load_seed
@@ -32,7 +33,13 @@ from app.services.seed import SeedError, add_missing_selectors, load_seed
 @asynccontextmanager
 async def open_session() -> AsyncIterator[AsyncSession]:
     settings = get_settings()
-    db = Database(settings.database_url(), echo=settings.db_echo, connect_args=settings.connect_args())
+    # Scripts use the direct address when there is one (DATABASE_URL_UNPOOLED).
+    db = Database(
+        settings.database_url(direct=True),
+        echo=settings.db_echo,
+        connect_args=settings.connect_args(direct=True),
+        null_pool=True,
+    )
     try:
         async with db.sessionmaker() as session:
             yield session
@@ -64,11 +71,8 @@ async def delete_admin(username: str) -> None:
 
 
 async def cleanup() -> None:
-    settings = get_settings()
     async with open_session() as session:
-        removed = await MediaService(MediaRepository(session), create_storage(settings)).cleanup()
-        await AuthRepository(session).purge(datetime.now(UTC) - timedelta(days=30))
-        await session.commit()
+        removed = await maintenance.cleanup(session, create_storage(get_settings()))
         print(f"Removed {removed} unlinked upload(s), old login attempts and expired sessions.")
 
 
@@ -93,6 +97,19 @@ async def import_selectors(path: str) -> None:
     print("Nothing else was changed.")
 
 
+async def copy_media() -> None:
+    settings = get_settings()
+    if settings.storage_backend == "local":
+        print("Set STORAGE_BACKEND (blob or s3) and its settings first; files are read from LOCAL_STORAGE_DIR.")
+        raise SystemExit(1)
+    source = LocalStorage(settings.local_storage_dir, settings.media_base_url)
+    async with open_session() as session:
+        copied, missing = await maintenance.copy_media(session, source, create_storage(settings))
+    print(f"Copied {copied} file(s) to {settings.storage_backend}.")
+    if missing:
+        print(f"Not found in {source.root} ({len(missing)}): {', '.join(missing)}", file=sys.stderr)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -107,6 +124,7 @@ def main() -> None:
         "import-selectors", help="add the seed's development fields and technologies a filled database lacks"
     )
     importing.add_argument("--file", default="seed/content.json", help="relative to backend/")
+    commands.add_parser("copy-media", help="copy the local uploads to the storage set in STORAGE_BACKEND")
     args = parser.parse_args()
 
     if args.command == "create-admin":
@@ -124,6 +142,8 @@ def main() -> None:
         asyncio.run(seed(args.file))
     elif args.command == "import-selectors":
         asyncio.run(import_selectors(args.file))
+    elif args.command == "copy-media":
+        asyncio.run(copy_media())
 
 
 if __name__ == "__main__":

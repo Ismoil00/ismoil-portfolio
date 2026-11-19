@@ -21,8 +21,12 @@ export function fieldErrors(error: unknown): Record<string, string> {
   return result;
 }
 
+/** A failure whose message is written for the person using the panel. */
+export class UserFacingError extends Error {}
+
 /** One human-readable sentence for a failed request. */
 export function errorMessage(error: unknown, fallback = "Something went wrong. Try again."): string {
+  if (error instanceof UserFacingError) return error.message;
   if (!isAxiosError(error)) return fallback;
   if (!error.response) return "Can't reach the server. Check that the backend is running.";
   const { status, data } = error.response;

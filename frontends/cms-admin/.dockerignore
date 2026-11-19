@@ -1,0 +1,11 @@
+# Only what the image needs (see Dockerfile). Local env files hold secrets: never copy them in.
+node_modules/
+.next/
+.env
+.env.*
+!.env.example
+.vercel/
+npm-debug.log*
+tsconfig.tsbuildinfo
+README.md
+AGENTS.md

@@ -14,9 +14,14 @@ function readCookie(name: string): string | undefined {
   return match ? decodeURIComponent(match.slice(name.length + 1)) : undefined;
 }
 
+/** The CSRF token the backend expects in X-CSRF-Token on writes (read from its cookie). */
+export function csrfToken(): string | undefined {
+  return CSRF_COOKIES.map(readCookie).find(Boolean);
+}
+
 api.interceptors.request.use((config) => {
   if (!SAFE.has((config.method ?? "get").toUpperCase())) {
-    const token = CSRF_COOKIES.map(readCookie).find(Boolean);
+    const token = csrfToken();
     if (token) config.headers.set("X-CSRF-Token", token);
   }
   return config;

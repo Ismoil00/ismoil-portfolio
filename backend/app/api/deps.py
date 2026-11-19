@@ -25,7 +25,9 @@ async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
 
 
 def get_ip_hash(request: Request, settings: Annotated[Settings, Depends(get_settings_dep)]) -> str:
-    return hash_ip(client_ip(request, settings.trusted_proxies), settings.secret_key.get_secret_value())
+    token = settings.internal_api_token.get_secret_value() if settings.internal_api_token else None
+    ip = client_ip(request, settings.trusted_proxies, ip_header=settings.client_ip_header, internal_token=token)
+    return hash_ip(ip, settings.secret_key.get_secret_value())
 
 
 SettingsDep = Annotated[Settings, Depends(get_settings_dep)]

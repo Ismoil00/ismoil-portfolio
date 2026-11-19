@@ -1,6 +1,7 @@
 """requirements.lock pins every package, and pip accepts it as a constraints file (`pip install -c`)."""
 
 import re
+import tomllib
 from pathlib import Path
 
 from app.core.config import BASE_DIR
@@ -52,3 +53,22 @@ def test_every_listed_package_is_pinned_in_the_lock():
     for path in LISTS:
         missing = listed_names(path) - pinned
         assert not missing, f"{path.name} lists {sorted(missing)}, missing from requirements.lock (see README)"
+
+
+PYPROJECT = BASE_DIR / "pyproject.toml"
+DEPENDENCY = re.compile(r"^(?P<name>[A-Za-z0-9][A-Za-z0-9._-]*)(\[[a-z0-9,]+\])?==(?P<version>[^\s;]+)$")
+
+
+def test_pyproject_pins_the_app_packages_like_the_lock():
+    """Vercel installs the backend from pyproject.toml, everything else from requirements.txt + the lock:
+    both must name the same packages at the same versions."""
+    dependencies = tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))["project"]["dependencies"]
+    locked = {_normalize(m.group("name")): line.split("==", 1)[1] for line in _lines(LOCK) if (m := PINNED.match(line))}
+    names = set()
+    for dependency in dependencies:
+        match = DEPENDENCY.match(dependency)
+        assert match, f"pyproject.toml: pin {dependency!r} as name==version"
+        name = _normalize(match.group("name"))
+        assert locked.get(name) == match.group("version"), f"{dependency} differs from requirements.lock"
+        names.add(name)
+    assert names == listed_names(LISTS[0]), "pyproject.toml and requirements.txt list different packages"

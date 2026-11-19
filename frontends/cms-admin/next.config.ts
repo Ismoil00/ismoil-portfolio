@@ -7,6 +7,8 @@ const apiUrl = process.env.API_URL ?? "http://localhost:8000";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   devIndicators: false,
+  // The Docker image (Dockerfile) runs a self-contained server; Vercel and `npm run build` build as usual.
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   async rewrites() {
     return [
       { source: "/api/:path*", destination: `${apiUrl}/api/:path*` },

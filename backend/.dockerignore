@@ -1,0 +1,15 @@
+# Only what the image needs (see Dockerfile). Secrets and local data never go into an image.
+.env
+.env.*
+.dev-credentials
+.venv/
+.tmp/
+storage/
+tests/
+tests_architecture/
+scripts/
+**/__pycache__/
+.ruff_cache/
+.pytest_cache/
+vercel.json
+.vercel/

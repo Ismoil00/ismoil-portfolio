@@ -1,0 +1,311 @@
+# One pipeline for the whole repository, with a lane per app. Each lane runs only when its folder changed.
+#
+#   Pull request to main  →  checks only: lint, types, tests, builds, Docker images, end-to-end tests.
+#   Push (merge) to main  →  the same checks, then production:  migrations → backend → public site + admin.
+#   Actions tab → Pipeline → "Run workflow"  →  everything, as if every app changed (e.g. to redeploy).
+#
+# An app is deployed only once its Vercel project ID is saved as a variable (so apps can go live one by one),
+# and migrations run only once the DATABASE_URL_UNPOOLED secret exists.
+#
+# Needs (Settings → Secrets and variables → Actions):
+#   secrets    VERCEL_TOKEN, DATABASE_URL_UNPOOLED
+#   variables  VERCEL_ORG_ID, VERCEL_PROJECT_ID_BACKEND, VERCEL_PROJECT_ID_PUBLIC, VERCEL_PROJECT_ID_ADMIN
+
+name: Pipeline
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A newer push to the same pull request cancels the older run; runs on main always finish.
+concurrency:
+  group: pipeline-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+  pull-requests: read # the change detection lists a pull request's files
+
+env:
+  PYTHON_VERSION: "3.13"
+  NODE_VERSION: "22"
+  # The npm that wrote the package-lock.json files (Node 22 ships npm 10, which reads them differently).
+  NPM_VERSION: "11.6.0"
+
+jobs:
+  # Which apps does this change touch? (A change to the pipeline itself counts for all of them.)
+  changes:
+    name: Detect changed apps
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.backend == 'true' }}
+      public: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.public == 'true' }}
+      admin: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.admin == 'true' }}
+      any: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.changes != '[]' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend: ["backend/**", ".github/workflows/**"]
+            public: ["frontends/public/**", ".github/workflows/**"]
+            admin: ["frontends/cms-admin/**", ".github/workflows/**"]
+            e2e: ["e2e/**", "docker-compose.yml"]
+
+  backend:
+    name: Backend — lint and tests
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: portfolio
+          POSTGRES_PASSWORD: ci-password
+          POSTGRES_DB: portfolio
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U portfolio" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DB_HOST: localhost
+      DB_PASSWORD: ci-password
+      PGPASSWORD: ci-password
+      SECRET_KEY: ci-only-secret-key-used-nowhere-else
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements.lock
+      - run: pip install -r requirements-dev.txt -c requirements.lock
+      - name: Lint and format
+        run: |
+          ruff check app tests alembic
+          ruff format --check app tests alembic
+      - name: Create the test database
+        run: psql -h localhost -U portfolio -d portfolio -c "CREATE DATABASE portfolio_test"
+      - name: Unit and integration tests
+        run: python -m pytest
+      - name: Models and migrations agree
+        run: |
+          alembic upgrade head
+          alembic check
+
+  public:
+    name: Public site — lint, types, build
+    needs: changes
+    if: needs.changes.outputs.public == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontends/public
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontends/public/package-lock.json
+      - run: npm install --global npm@${{ env.NPM_VERSION }}
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm run build
+        env:
+          API_URL: http://localhost:8000/api/v1
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+
+  admin:
+    name: Admin panel — lint, types, build
+    needs: changes
+    if: needs.changes.outputs.admin == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontends/cms-admin
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontends/cms-admin/package-lock.json
+      - run: npm install --global npm@${{ env.NPM_VERSION }}
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm run build
+        env:
+          API_URL: http://localhost:8000
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+
+  # The Docker images aren't what Vercel runs; building them proves each Dockerfile still works.
+  docker:
+    name: Docker images build
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: Backend image
+        if: needs.changes.outputs.backend == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          push: false
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+      - name: Public site image
+        if: needs.changes.outputs.public == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: frontends/public
+          push: false
+          cache-from: type=gha,scope=public
+          cache-to: type=gha,mode=max,scope=public
+      - name: Admin panel image
+        if: needs.changes.outputs.admin == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: frontends/cms-admin
+          push: false
+          cache-from: type=gha,scope=admin
+          cache-to: type=gha,mode=max,scope=admin
+
+  # A real browser (Microsoft Edge) on both sites against the real backend, as on your machine (e2e/).
+  e2e:
+    name: End-to-end tests
+    needs: [changes, backend, public, admin]
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.any == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: portfolio
+          POSTGRES_PASSWORD: ci-password
+          POSTGRES_DB: portfolio
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U portfolio" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      CI: "true"
+      DB_HOST: localhost
+      DB_PASSWORD: ci-password
+      SECRET_KEY: ci-only-secret-key-used-nowhere-else
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements.lock
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            frontends/public/package-lock.json
+            frontends/cms-admin/package-lock.json
+            e2e/package-lock.json
+      - name: Backend environment (backend/.venv, as the tests expect)
+        run: |
+          python -m venv backend/.venv
+          backend/.venv/bin/pip install -r backend/requirements.txt -c backend/requirements.lock
+      - name: Install the apps and the test runner
+        run: |
+          npm install --global npm@${{ env.NPM_VERSION }}
+          npm ci --prefix frontends/public
+          npm ci --prefix frontends/cms-admin
+          npm ci --prefix e2e
+      - name: Install Microsoft Edge
+        working-directory: e2e
+        run: npx playwright install --with-deps msedge
+      - name: Run the tests
+        working-directory: e2e
+        run: npm test
+      - name: Keep the report when something fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 7
+
+  # ---- Production (pushes to main only) ------------------------------------------------------------
+
+  migrate:
+    name: Database — migrations on Neon
+    needs: [changes, backend, docker, e2e]
+    if: ${{ !cancelled() && !failure() && github.event_name != 'pull_request' && needs.changes.outputs.backend == 'true' && vars.VERCEL_PROJECT_ID_BACKEND != '' }}
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: production-database
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      # The direct (unpooled) Neon address: schema changes shouldn't go through the pooler.
+      DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+      SECRET_KEY: migrations-do-not-use-the-app-secret
+    steps:
+      - name: No database yet
+        if: env.DATABASE_URL_UNPOOLED == ''
+        run: echo "::warning::The DATABASE_URL_UNPOOLED secret isn't set yet, so migrations were skipped."
+      - uses: actions/checkout@v5
+        if: env.DATABASE_URL_UNPOOLED != ''
+      - uses: actions/setup-python@v6
+        if: env.DATABASE_URL_UNPOOLED != ''
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements.lock
+      - if: env.DATABASE_URL_UNPOOLED != ''
+        run: pip install -r requirements.txt -c requirements.lock
+      - if: env.DATABASE_URL_UNPOOLED != ''
+        run: alembic upgrade head
+
+  deploy-backend:
+    name: Deploy backend
+    needs: [changes, migrate]
+    if: ${{ !cancelled() && !failure() && github.event_name != 'pull_request' && needs.changes.outputs.backend == 'true' && vars.VERCEL_PROJECT_ID_BACKEND != '' }}
+    uses: ./.github/workflows/deploy-vercel.yml
+    with:
+      app: backend
+      project-id: ${{ vars.VERCEL_PROJECT_ID_BACKEND }}
+    secrets: inherit
+
+  deploy-public:
+    name: Deploy public site
+    needs: [changes, public, docker, e2e, deploy-backend]
+    if: ${{ !cancelled() && !failure() && github.event_name != 'pull_request' && needs.changes.outputs.public == 'true' && vars.VERCEL_PROJECT_ID_PUBLIC != '' }}
+    uses: ./.github/workflows/deploy-vercel.yml
+    with:
+      app: public
+      project-id: ${{ vars.VERCEL_PROJECT_ID_PUBLIC }}
+    secrets: inherit
+
+  deploy-admin:
+    name: Deploy admin panel
+    needs: [changes, admin, docker, e2e, deploy-backend]
+    if: ${{ !cancelled() && !failure() && github.event_name != 'pull_request' && needs.changes.outputs.admin == 'true' && vars.VERCEL_PROJECT_ID_ADMIN != '' }}
+    uses: ./.github/workflows/deploy-vercel.yml
+    with:
+      app: admin
+      project-id: ${{ vars.VERCEL_PROJECT_ID_ADMIN }}
+    secrets: inherit

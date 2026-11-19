@@ -3,6 +3,31 @@ name = "portfolio-backend"
 version = "1.0.0"
 description = "FastAPI backend for the portfolio site and its admin panel"
 requires-python = ">=3.13"
+# The app's packages, pinned like requirements.lock (Vercel installs from here; locally and in Docker
+# requirements.txt + the lock are used — tests/unit/test_requirements.py keeps both the same).
+dependencies = [
+    "fastapi==0.162.7",
+    "uvicorn[standard]==0.54.0",
+    "sqlalchemy[asyncio]==2.1.8",
+    "asyncpg==0.32.0",
+    "alembic==1.20.1",
+    "pydantic-settings==2.16.3",
+    "email-validator==2.3.0",
+    "argon2-cffi==25.1.0",
+    "nh3==0.3.7",
+    "pillow==13.0.0",
+    "python-multipart==0.0.33",
+    "aioboto3==15.5.0",
+    "anthropic==2.8.0",
+    "tzdata==2026.6",
+    "defusedxml==0.7.1",
+    "certifi==2026.10.23",
+    "vercel-blob==0.6.0",
+]
+
+[tool.vercel]
+# Vercel loads `app` from app/asgi.py (function settings in vercel.json are keyed by that file).
+entrypoint = "app.asgi:app"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

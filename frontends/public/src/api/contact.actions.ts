@@ -11,9 +11,20 @@ export type SendResult = "sent" | "invalid" | "rate-limited" | "error";
 const text = (value: unknown, max: number) => (typeof value === "string" ? value.slice(0, max) : "");
 
 /**
- * The contact form's Server Action: the browser never talks to the backend directly. The visitor's
- * address is passed on (X-Forwarded-For) so the backend's per-visitor limit works.
+ * Headers that tell the backend who the visitor is, so its per-visitor limit works. Locally the
+ * backend trusts this server's X-Forwarded-For. On Vercel it can't (Vercel overwrites that header),
+ * so the visitor's IP goes in X-Visitor-IP with the shared INTERNAL_API_TOKEN.
  */
+function visitorHeaders(incoming: Pick<Headers, "get">): Record<string, string> {
+  const forwarded = incoming.get("x-forwarded-for");
+  const result: Record<string, string> = forwarded ? { "X-Forwarded-For": forwarded } : {};
+  const visitor = forwarded?.split(",")[0].trim();
+  const token = process.env.INTERNAL_API_TOKEN;
+  if (token && visitor) Object.assign(result, { "X-Internal-Token": token, "X-Visitor-IP": visitor });
+  return result;
+}
+
+/** The contact form's Server Action: the browser never talks to the backend directly. */
 export async function sendContactMessage(payload: ContactPayload): Promise<SendResult> {
   const body = {
     name: text(payload?.name, 500),
@@ -21,9 +32,8 @@ export async function sendContactMessage(payload: ContactPayload): Promise<SendR
     message: text(payload?.message, 10_000),
     website: text(payload?.website, 500),
   };
-  const forwarded = (await headers()).get("x-forwarded-for");
   try {
-    await apiClient.post(endpoints.contact, body, { headers: forwarded ? { "X-Forwarded-For": forwarded } : {} });
+    await apiClient.post(endpoints.contact, body, { headers: visitorHeaders(await headers()) });
     return "sent";
   } catch (error) {
     if (isAxiosError(error) && error.response?.status === 422) return "invalid";

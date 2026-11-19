@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": { "deploymentEnabled": false },
+  "functions": {
+    "app/asgi.py": {
+      "maxDuration": 60,
+      "excludeFiles": "{tests/**,tests_architecture/**,storage/**,.venv/**,.tmp/**,.ruff_cache/**,scripts/**,seed/**,Dockerfile,.dockerignore,README.md}"
+    }
+  },
+  "crons": [{ "path": "/api/v1/internal/cleanup", "schedule": "0 3 * * *" }]
+}

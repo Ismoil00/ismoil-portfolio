@@ -25,7 +25,7 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    url = get_settings().database_url().render_as_string(hide_password=False)
+    url = get_settings().database_url(direct=True).render_as_string(hide_password=False)
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -45,10 +45,18 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
+    # Hosted databases: the direct address (DATABASE_URL_UNPOOLED), as Neon recommends for schema changes.
     settings = get_settings()
-    engine = create_async_engine(settings.database_url(), poolclass=NullPool, connect_args=settings.connect_args())
+    engine = create_async_engine(
+        settings.database_url(direct=True), poolclass=NullPool, connect_args=settings.connect_args(direct=True)
+    )
     async with engine.begin() as connection:
         await connection.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{settings.db_schema}"'))
+        if settings.hosted_db_url is not None or settings.hosted_db_url_direct is not None:
+            # The app reaches a hosted database through PgBouncer, which can't set search_path per
+            # connection: make DB_SCHEMA the role's default instead (applies to new connections).
+            database = await connection.scalar(text("SELECT current_database()"))
+            await connection.execute(text(settings.role_search_path_sql(database)))
     async with engine.connect() as connection:
         await connection.run_sync(do_run_migrations)
     await engine.dispose()

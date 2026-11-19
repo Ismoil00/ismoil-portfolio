@@ -1,0 +1,98 @@
+# The whole portfolio on your machine, in containers: production builds of both sites, the backend,
+# its own PostgreSQL and its own uploads folder. Nothing here touches your development database or files.
+#
+#   1. Copy .env.example (this folder) to .env and fill it in.
+#   2. Start Docker Desktop, then:   docker compose up --build
+#   3. First run only:               docker compose run --rm backend python -m app.cli seed
+#                                    docker compose run --rm backend python -m app.cli create-admin
+#
+#   Site  http://localhost:3000    Admin  http://localhost:3001    API  http://localhost:8000/api/v1/health
+#   Stop: Ctrl+C, or `docker compose down` (add -v to also delete the database and uploads).
+#
+# The ports are the development ones: stop `npm run dev` / uvicorn first. Your own PostgreSQL keeps 5432
+# (the container database isn't published to your machine).
+
+name: portfolio
+
+x-backend-env: &backend-env
+  ENV: production
+  DB_HOST: db
+  DB_USER: portfolio
+  DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+  DB_NAME: portfolio
+  SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env}
+  COOKIE_SECURE: "false" # plain http on localhost; true on Vercel (https)
+  ADMIN_ORIGINS: '["http://localhost:3001"]'
+  INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?Set INTERNAL_API_TOKEN in .env}
+  STORAGE_BACKEND: local
+  LOCAL_STORAGE_DIR: /app/storage
+  MEDIA_BASE_URL: http://localhost:8000/media
+
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: portfolio
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: portfolio
+    volumes:
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portfolio -d portfolio"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Runs the database migrations once, then exits; the backend starts only after it succeeds.
+  migrate:
+    build: ./backend
+    command: ["alembic", "upgrade", "head"]
+    environment: *backend-env
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    build: ./backend
+    environment: *backend-env
+    volumes:
+      - media:/app/storage
+      # The seed's résumé file (seed/content.json points at it), read-only.
+      - ./frontends/public/public/cv:/frontends/public/public/cv:ro
+    ports:
+      - "8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  public:
+    build:
+      context: ./frontends/public
+      args:
+        NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    environment:
+      API_URL: http://backend:8000/api/v1
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  admin:
+    build:
+      context: ./frontends/cms-admin
+      args:
+        API_URL: http://backend:8000
+        NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    environment:
+      API_URL: http://backend:8000
+    ports:
+      - "3001:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  db-data:
+  media:
