@@ -4,7 +4,7 @@ from fastapi import APIRouter
 
 from app.api import auth, internal
 from app.api.admin.router import admin_router
-from app.api.public.router import public_router
+from app.api.public_api.router import public_router
 
 api_router = APIRouter()
 api_router.include_router(auth.router)

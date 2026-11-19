@@ -55,3 +55,9 @@ def test_locally_temp_files_stay_in_the_project(monkeypatch):
     local = Settings(_env_file=None, secret_key="x")
     assert local.temp_dir == BASE_DIR / ".tmp"
     assert local.client_ip_header is None
+
+
+def test_no_code_folder_is_named_public():
+    """Vercel treats folders named `public` as static files and leaves them out of the Python function,
+    so code there can't be imported in production (it crashed the backend once: app/api/public)."""
+    assert [p for p in (BASE_DIR / "app").rglob("public") if p.is_dir()] == []

@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.public import contact, content
+from app.api.public_api import contact, content
 
 public_router = APIRouter(prefix="/public")
 public_router.include_router(contact.router)
