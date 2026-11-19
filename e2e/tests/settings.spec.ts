@@ -38,6 +38,7 @@ test.describe("Settings: translator", () => {
     await chooseTranslator(page, "Google Translate");
     try {
       await page.goto(admin("/about"));
+      await expect(titleField(page)).not.toHaveValue(""); // the form has loaded its saved values
       const english = await titleField(page).inputValue();
       const google = page.getByRole("group", { name: "Google Translate" }).first();
       await expect(page.getByRole("button", { name: "Translate", exact: true })).toHaveCount(0); // no Claude button
