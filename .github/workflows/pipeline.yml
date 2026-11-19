@@ -266,6 +266,7 @@ jobs:
     steps:
       - name: No database yet
         if: env.DATABASE_URL_UNPOOLED == ''
+        working-directory: . # the code isn't checked out in this case, so backend/ doesn't exist
         run: echo "::warning::The DATABASE_URL_UNPOOLED secret isn't set yet, so migrations were skipped."
       - uses: actions/checkout@v5
         if: env.DATABASE_URL_UNPOOLED != ''
