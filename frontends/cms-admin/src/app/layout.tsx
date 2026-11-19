@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Manrope, Space_Grotesk, Tajawal } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { BackgroundGlow } from "@/components/layout/BackgroundGlow";
 import { themeInitScript } from "@/lib/theme";
 import "./globals.css";
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-svh">
         <BackgroundGlow />
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );
