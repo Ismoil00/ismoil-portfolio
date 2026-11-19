@@ -14,11 +14,13 @@ const osTemp = path.join(tmp, "os-temp");
 rmSync(osTemp, { recursive: true, force: true });
 mkdirSync(osTemp, { recursive: true });
 
+// Only on Windows (your machine). On Linux (the pipeline) Edge puts a socket file in the temp folder, and a
+// socket path deep inside the repository is longer than Linux allows, so the system temp folder is kept.
+const tempFolders = process.platform === "win32" ? { TEMP: osTemp, TMP: osTemp, TMPDIR: osTemp } : {};
+
 const env = {
   ...process.env,
-  TEMP: osTemp,
-  TMP: osTemp,
-  TMPDIR: osTemp,
+  ...tempFolders,
   PLAYWRIGHT_BROWSERS_PATH: path.join(tmp, "browsers"),
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1",
 };

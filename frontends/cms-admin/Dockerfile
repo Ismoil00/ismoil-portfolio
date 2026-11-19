@@ -25,7 +25,8 @@ ENV NEXT_OUTPUT=standalone \
     NEXT_TELEMETRY_DISABLED=1 \
     API_URL=$API_URL \
     NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
-RUN npm run build
+# The admin has no public/ files, and git doesn't keep empty folders: make it so the copy below works.
+RUN mkdir -p public && npm run build
 
 # 3. Run: only the built server, its static files and public/ — no source, no dev dependencies.
 FROM node:22-alpine AS run
