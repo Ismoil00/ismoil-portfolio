@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "../support/fixtures";
 import { ADMIN_STATE, admin } from "../support/env";
 
 // The Selectors page: search by name (any language), sort by name, and rows without usage chips

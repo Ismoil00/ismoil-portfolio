@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "../support/fixtures";
 import { ADMIN_STATE, LOCALES, admin, site } from "../support/env";
 
 const PAGES = ["", "/experience", "/projects", "/projects/gov-platform", "/certificates"];

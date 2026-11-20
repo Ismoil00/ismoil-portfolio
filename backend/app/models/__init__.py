@@ -1,6 +1,7 @@
 """Every table, imported in one place so Base.metadata knows them all (Alembic, tests)."""
 
 from app.models import links
+from app.models.analytics import VisitEvent
 from app.models.auth import AdminSession, AdminUser, LoginAttempt
 from app.models.content import Certificate, ContactMessage, Experience, Project, Testimonial
 from app.models.media import Media
@@ -38,5 +39,6 @@ __all__ = [
     "Project",
     "TechStack",
     "Testimonial",
+    "VisitEvent",
     "links",
 ]

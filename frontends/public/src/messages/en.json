@@ -129,11 +129,16 @@
   },
   "footer": {
     "rights": "All rights reserved.",
-    "top": "Back to top"
+    "top": "Back to top",
+    "cookieSettings": "Cookie settings",
+    "cookiePolicy": "Cookie policy"
   },
   "notFound": {
+    "eyebrow": "Error 404",
     "title": "Page not found",
-    "back": "Back to home"
+    "text": "The page you are looking for does not exist or has been moved.",
+    "back": "Back to home",
+    "sections": "Site sections"
   },
   "about": {
     "resume": "Download resume",
@@ -301,5 +306,35 @@
     "next": "Next",
     "counter": "{current} / {total}",
     "openItem": "Open item {n} of {total} full screen"
+  },
+  "consent": {
+    "title": "Cookies on this site",
+    "text": "Necessary cookies keep the site working. With your consent, the site also counts visits anonymously and remembers your theme.",
+    "policy": "Cookie policy",
+    "accept": "Accept all",
+    "reject": "Reject",
+    "customize": "Customize",
+    "settingsTitle": "Cookie settings",
+    "settingsText": "Choose what the site may store in your browser. You can change this at any time from the footer.",
+    "necessary": "Necessary",
+    "necessaryText": "Keep your cookie choice and the site's security.",
+    "analytics": "Analytics",
+    "analyticsText": "An anonymous random ID, so repeat visits are counted once. Without it, page views are still counted anonymously.",
+    "preferences": "Preferences",
+    "preferencesText": "Remembers the light or dark theme between visits.",
+    "alwaysOn": "Always on",
+    "save": "Save choice",
+    "rejectAll": "Reject all",
+    "acceptAll": "Accept all",
+    "close": "Close"
+  },
+  "cookiesPage": {
+    "title": "Cookie policy",
+    "intro": "This site stores only what it needs, and asks before storing anything else.",
+    "necessaryText": "consent — your cookie choice (6 months).",
+    "analyticsText": "vid — a random anonymous ID (1 year), only with your consent. Visit statistics (page, language, device type, country, the site you came from) are kept on this site's own server for about a year, without your IP address or name.",
+    "preferencesText": "theme — your light or dark theme, kept in your browser, only with your consent.",
+    "thirdParty": "No advertising or third-party tracking cookies are used.",
+    "change": "You can change your choice at any time:"
   }
 }

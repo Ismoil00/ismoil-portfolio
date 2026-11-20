@@ -3,6 +3,8 @@ import { LuArrowUp } from "react-icons/lu";
 import { Container } from "@/components/ui/Container";
 import { SocialIcon } from "@/components/ui/SocialIcon";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { CookieSettingsButton } from "@/components/consent/CookieSettingsButton";
+import { Link } from "@/i18n/navigation";
 import type { Profile } from "@/types/content";
 
 export async function Footer({ profile }: { profile: Profile }) {
@@ -14,9 +16,18 @@ export async function Footer({ profile }: { profile: Profile }) {
       {/* One row from md: copyright | "back to top" (exactly centered) | contact icons.
           Phones stack them: button, copyright, icons. */}
       <Container className="flex flex-col items-center gap-4 text-center md:grid md:grid-cols-[1fr_auto_1fr] md:gap-6 md:text-left">
-        <p className="font-display text-fg">
-          © {year} {profile.fullName}. {t("rights")}
-        </p>
+        <div className="flex flex-col items-center gap-1 md:items-start">
+          <p className="font-display text-fg">
+            © {year} {profile.fullName}. {t("rights")}
+          </p>
+          {/* Cookie choices can be changed at any time (consent rules). */}
+          <p className="flex gap-3 text-sm text-muted">
+            <CookieSettingsButton label={t("cookieSettings")} className="underline-offset-2 hover:text-accent hover:underline" />
+            <Link href="/cookies" className="underline-offset-2 hover:text-accent hover:underline">
+              {t("cookiePolicy")}
+            </Link>
+          </p>
+        </div>
 
         <a
           href="#top"

@@ -11,6 +11,7 @@ from app.models import Media
 from app.repositories.auth import AuthRepository
 from app.repositories.media import MediaRepository
 from app.repositories.storage import LocalStorage, Storage
+from app.services.analytics import AnalyticsService
 from app.services.media import MediaService, attachment_name
 
 AUTH_RECORDS_KEPT = timedelta(days=30)
@@ -21,6 +22,7 @@ async def cleanup(session: AsyncSession, storage: Storage) -> int:
     Returns how many files were removed."""
     removed = await MediaService(MediaRepository(session), storage).cleanup()
     await AuthRepository(session).purge(datetime.now(UTC) - AUTH_RECORDS_KEPT)
+    await AnalyticsService(session, max_per_hour=0).forget_old()
     await session.commit()
     return removed
 

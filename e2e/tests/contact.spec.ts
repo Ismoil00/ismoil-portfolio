@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../support/fixtures";
 import { ADMIN_STATE, admin, site } from "../support/env";
 
 test.describe("Contact form", () => {

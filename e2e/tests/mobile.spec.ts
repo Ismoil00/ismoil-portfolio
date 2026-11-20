@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../support/fixtures";
 import { LOCALES, site } from "../support/env";
 
 // Runs in the "phone" project (Pixel 7 screen, touch).

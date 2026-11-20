@@ -2,6 +2,7 @@ import type { IconType } from "react-icons";
 import {
   LuAward,
   LuBriefcaseBusiness,
+  LuChartColumn,
   LuContact,
   LuFolderKanban,
   LuLayers,
@@ -30,4 +31,5 @@ export const navItems: NavItem[] = [
   { href: "/certificates", label: "Certificates", icon: LuAward, description: "Certificates and diplomas." },
   { href: "/contacts", label: "Contacts", icon: LuContact, description: "Ways to reach you, other links and messages." },
   { href: "/selectors", label: "Selectors", icon: LuListTree, description: "The lists the other pages pick from." },
+  { href: "/analytics", label: "Analytics", icon: LuChartColumn, description: "Visits to the public site." },
 ];

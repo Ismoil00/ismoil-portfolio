@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "../support/fixtures";
 import { ADMIN_STATE, admin, site } from "../support/env";
 
 // Edits made in the admin panel show on the public site straight away, in the right language only.

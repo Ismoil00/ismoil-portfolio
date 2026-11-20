@@ -223,3 +223,16 @@ export interface PanelSettings {
 
 /** The signed-in admin (GET /auth/me). */
 export type Me = { username: string };
+
+/** Visit statistics for the Analytics page (GET /admin/analytics?days=…). */
+export type Count = { name: string; count: number };
+export type Analytics = {
+  days: number;
+  totals: { page_views: number; visitors: number; resume_downloads: number; messages: number };
+  daily: { date: string; page_views: number; visitors: number }[];
+  pages: Count[];
+  referrers: Count[];
+  countries: Count[];
+  locales: Count[];
+  devices: Count[];
+};

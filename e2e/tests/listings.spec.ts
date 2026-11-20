@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../support/fixtures";
 import { adminApi, i18n, type AdminApi } from "../support/admin-api";
 import { site } from "../support/env";
 

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "../support/fixtures";
 import { ADMIN_STATE, admin, adminCredentials } from "../support/env";
 
 // Runs last (its own project in playwright.config.ts): a username or password change signs out every

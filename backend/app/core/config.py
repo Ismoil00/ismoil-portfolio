@@ -89,6 +89,7 @@ class Settings(BaseSettings):
     login_window_minutes: int = 15
     contact_max_per_hour: int = 5  # per IP
     contact_max_per_hour_global: int = 30  # all visitors together
+    analytics_max_per_hour: int = 120  # visit events kept per IP (more are quietly dropped)
 
     # File storage
     storage_backend: Literal["local", "s3", "blob"] = "local"

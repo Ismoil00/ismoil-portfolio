@@ -2,6 +2,8 @@
  * Dark / light theme. Dark is the default; choosing light sets <html data-theme="light">
  * (see globals.css → Themes) and is remembered in localStorage.
  */
+import { allowsPreferences } from "./consent";
+
 export type Theme = "dark" | "light";
 
 export const THEME_STORAGE_KEY = "theme";
@@ -25,6 +27,8 @@ export function applyTheme(theme: Theme) {
   if (theme === "light") root.dataset.theme = "light";
   else delete root.dataset.theme;
   syncThemeColor(theme);
+  // Remembered only with the visitor's consent to preference cookies (lib/consent.ts).
+  if (!allowsPreferences()) return;
   try {
     localStorage.setItem(THEME_STORAGE_KEY, theme);
   } catch {

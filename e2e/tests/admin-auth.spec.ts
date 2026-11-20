@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../support/fixtures";
 import { admin, adminCredentials } from "../support/env";
 
 test.describe("Admin sign-in", () => {

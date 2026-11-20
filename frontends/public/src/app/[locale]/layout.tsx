@@ -12,6 +12,8 @@ import { visibleNavItems } from "@/components/layout/nav-items";
 import { Footer } from "@/components/layout/Footer";
 import { SocialRail } from "@/components/layout/SocialRail";
 import { BackgroundGlow } from "@/components/layout/BackgroundGlow";
+import { ConsentBanner } from "@/components/consent/ConsentBanner";
+import { VisitTracker } from "@/components/consent/VisitTracker";
 import { siteUrl } from "@/lib/site";
 import { themeInitScript } from "@/lib/theme";
 import "../globals.css";
@@ -110,7 +112,9 @@ export default async function LocaleLayout({ children, params }: Props) {
         {/* Applies a saved light theme before the first paint (no dark flash). */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body id="top" className="min-h-svh">
+      {/* A column at least as tall as the window: on pages shorter than the window (the cookie page) the
+          main part grows, so the footer sits at the bottom instead of leaving empty space below it. */}
+      <body id="top" className="flex min-h-svh flex-col">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
@@ -119,8 +123,10 @@ export default async function LocaleLayout({ children, params }: Props) {
           <BackgroundGlow />
           <Header resumeUrl={profile.resumeUrl} navItems={navItems} />
           <SocialRail profile={profile} />
-          <main>{children}</main>
+          <main className="flex-1">{children}</main>
           <Footer profile={profile} />
+          <ConsentBanner />
+          <VisitTracker />
         </NextIntlClientProvider>
       </body>
     </html>

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "../support/fixtures";
 import { adminApi, i18n } from "../support/admin-api";
 import { ADMIN_STATE, admin, site } from "../support/env";
 

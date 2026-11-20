@@ -50,6 +50,23 @@
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-4px); }
   }
+  /* Cookie banner: a gentle up-and-down float (6px over 4s) so it catches the eye without rushing. */
+  --animate-consent-float: consent-float 4s ease-in-out infinite;
+  @keyframes consent-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  /* 404 page: the number floats slowly (14px over 6s); its shadow below shrinks and fades as it rises. */
+  --animate-float-404: float-404 6s ease-in-out infinite;
+  --animate-float-404-shadow: float-404-shadow 6s ease-in-out infinite;
+  @keyframes float-404 {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-14px); }
+  }
+  @keyframes float-404-shadow {
+    0%, 100% { transform: scaleX(1); opacity: 0.9; }
+    50% { transform: scaleX(0.8); opacity: 0.45; }
+  }
   /* Tiles that remain after a filter change pop back in. */
   @keyframes tile-in {
     from { opacity: 0; transform: scale(0.85); }

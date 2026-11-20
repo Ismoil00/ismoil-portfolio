@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "../support/fixtures";
 import { ADMIN_STATE, admin } from "../support/env";
 
 // The Settings page decides what helps fill Russian and Tajik next to every EN / RU / TG field.

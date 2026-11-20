@@ -1,4 +1,4 @@
-import { expect, test as setup } from "@playwright/test";
+import { expect, test as setup } from "../support/fixtures";
 import { ADMIN_STATE, admin, adminCredentials } from "../support/env";
 
 // Signs in once through the real login page and saves the session for the tests that need it.
