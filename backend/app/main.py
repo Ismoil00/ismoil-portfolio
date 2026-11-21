@@ -16,8 +16,10 @@ from app.core.config import Settings, get_settings
 from app.core.errors import register_error_handlers
 from app.core.middleware import BodySizeLimitMiddleware, SecurityHeadersMiddleware
 from app.db.session import Database
+from app.repositories.chat_model import GroqChatModel
 from app.repositories.storage import S3Storage, create_storage
 from app.repositories.translation import ClaudeTranslator
+from app.services.chat_prompt import FactsCache
 
 
 def create_app(settings: Settings | None = None, *, database: Database | None = None) -> FastAPI:
@@ -58,6 +60,11 @@ def create_app(settings: Settings | None = None, *, database: Database | None = 
     # The Translate button works only with an Anthropic API key; without one it explains how to enable it.
     key = settings.anthropic_api_key.get_secret_value() if settings.anthropic_api_key else ""
     app.state.translator = ClaudeTranslator(key, settings.translation_model) if key else None
+    # The public site's AI assistant answers only with a Groq API key (free tier); without one it's off.
+    groq_key = settings.groq_api_key.get_secret_value() if settings.groq_api_key else ""
+    app.state.chat_model = GroqChatModel(groq_key) if groq_key else None
+    app.state.chat_facts = FactsCache()
+    app.state.chat_paused = {}
     if database is not None:
         app.state.db = database
 

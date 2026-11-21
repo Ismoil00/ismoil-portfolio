@@ -158,7 +158,14 @@ class MessagesService:
         if wait is not None:
             raise TooManyRequests("Too many messages right now. Try again later.", retry_after=wait)
         await self.repo.add(
-            ContactMessage(name=data.name, contact=data.contact, message=data.message, ip_hash=ip_hash, created_at=now)
+            ContactMessage(
+                name=data.name,
+                contact=data.contact,
+                message=data.message,
+                source=data.source,
+                ip_hash=ip_hash,
+                created_at=now,
+            )
         )
         await self.repo.commit()
 

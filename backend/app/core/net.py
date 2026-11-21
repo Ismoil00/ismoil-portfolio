@@ -59,3 +59,14 @@ def client_ip(
 def hash_ip(ip: str, secret: str) -> str:
     """Keyed hash of an IP: enough to count requests per visitor without storing the address."""
     return hmac.new(secret.encode(), ip.encode(), hashlib.sha256).hexdigest()
+
+
+def network_of(ip: str) -> str:
+    """The block an address belongs to: IPv4 /24 (one office or home network), IPv6 /64 (one household's
+    whole range, inside which a visitor can pick a new address at will). Anything unparsable is itself."""
+    try:
+        address = ipaddress.ip_address(ip)
+    except ValueError:
+        return ip
+    prefix = 24 if address.version == 4 else 64
+    return str(ipaddress.ip_network(f"{address}/{prefix}", strict=False))

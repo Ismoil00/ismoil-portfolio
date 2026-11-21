@@ -1,9 +1,85 @@
-"""In-memory stand-ins for repositories and the clock, so services are tested without a database."""
+"""In-memory stand-ins for repositories, the clock and the AI model, so services are tested without a
+database or Groq."""
 
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from app.models import AdminSession, AdminUser
+from app.models import AdminSession, AdminUser, ChatQuestion, ChatUsage
+from app.repositories.chat import ModelUse
+from app.repositories.chat_model import ChatModelFailed, ModelLimited, ModelUnreachable, Usage
+
+
+class FakeChatModel:
+    """Writes `answer` in a few pieces like the real model, then reports `tokens`. Models named in `limited`
+    refuse (free quota used up); `fail` refuses everything; `cut_after` stops after that many pieces."""
+
+    def __init__(
+        self,
+        answer: str = "Ismoil built a shop. See [it](/projects/shop).",
+        *,
+        tokens: int = 1_200,
+        limited: tuple[str, ...] = (),
+        unreachable: tuple[str, ...] = (),
+        fail: bool = False,
+        cut_after: int | None = None,
+    ) -> None:
+        self.answer = answer
+        self.tokens = tokens
+        self.limited = set(limited)
+        self.unreachable = set(unreachable)
+        self.fail = fail
+        self.cut_after = cut_after
+        self.calls: list[tuple[str, list[dict[str, str]], int]] = []
+
+    async def stream(self, model: str, messages: list[dict[str, str]], max_tokens: int):
+        self.calls.append((model, messages, max_tokens))
+        if model in self.limited:
+            raise ModelLimited(30)
+        if model in self.unreachable:
+            raise ModelUnreachable("no connection")
+        if self.fail:
+            raise ChatModelFailed("refused")
+        third = max(1, len(self.answer) // 3)
+        pieces = [self.answer[i : i + third] for i in range(0, len(self.answer), third)]
+        for index, piece in enumerate(pieces):
+            if self.cut_after is not None and index == self.cut_after:
+                raise ModelLimited(30)
+            yield piece
+        yield Usage(tokens=self.tokens)
+
+
+class FakeChatRepository:
+    def __init__(self) -> None:
+        self.usage: list[ChatUsage] = []
+        self.questions: list[ChatQuestion] = []
+        self.commits = 0
+
+    async def add_usage(self, row: ChatUsage) -> None:
+        row.id = row.id or uuid.uuid4()
+        self.usage.append(row)
+
+    async def finish_usage(self, usage_id: uuid.UUID, model: str, tokens: int) -> None:
+        row = next(u for u in self.usage if u.id == usage_id)
+        row.model, row.tokens = model, tokens
+
+    async def times_since(self, column, value: str, since: datetime) -> list[datetime]:
+        return sorted(u.created_at for u in self.usage if getattr(u, column.key) == value and u.created_at >= since)
+
+    async def model_use(self, model: str, *, day: datetime, hour: datetime, minute: datetime) -> ModelUse:
+        rows = [u for u in self.usage if u.model == model and u.created_at >= day]
+        return ModelUse(
+            requests_day=len(rows),
+            tokens_day=sum(u.tokens for u in rows),
+            tokens_hour=sum(u.tokens for u in rows if u.created_at >= hour),
+            requests_minute=sum(1 for u in rows if u.created_at >= minute),
+            tokens_minute=sum(u.tokens for u in rows if u.created_at >= minute),
+        )
+
+    async def add_question(self, row: ChatQuestion) -> None:
+        self.questions.append(row)
+
+    async def commit(self) -> None:
+        self.commits += 1
 
 
 class FakeClock:

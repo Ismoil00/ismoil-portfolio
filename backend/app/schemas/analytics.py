@@ -47,6 +47,27 @@ class TotalsOut(OutputModel):
     messages: int
 
 
+class ModelUsageOut(OutputModel):
+    """One Groq model's use of its free quota, over the windows Groq counts in (rolling), next to the
+    share the site allows itself (a little below Groq's own limits)."""
+
+    model: str
+    requests_day: int
+    requests_day_limit: int
+    tokens_day: int
+    tokens_day_limit: int
+    tokens_hour: int
+    tokens_hour_limit: int
+    tokens_minute: int
+    tokens_minute_limit: int
+
+
+class AssistantUsageOut(OutputModel):
+    ready: bool  # GROQ_API_KEY is set
+    enabled: bool  # switched on in Settings
+    models: list[ModelUsageOut]
+
+
 class AnalyticsOut(OutputModel):
     days: int
     totals: TotalsOut
@@ -56,3 +77,7 @@ class AnalyticsOut(OutputModel):
     countries: list[CountOut]
     locales: list[CountOut]
     devices: list[CountOut]
+    # The AI assistant's most asked questions (only from visitors who accepted analytics cookies).
+    questions: list[CountOut]
+    # The AI assistant's use of Groq's free quota right now (filled in by the endpoint).
+    assistant: AssistantUsageOut | None = None

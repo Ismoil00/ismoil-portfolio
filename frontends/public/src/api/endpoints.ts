@@ -14,4 +14,5 @@ export const endpoints = {
   certificateFilters: "/public/certificates/filters",
   contact: "/public/contact",
   events: "/public/events",
+  chat: "/public/chat",
 } as const;

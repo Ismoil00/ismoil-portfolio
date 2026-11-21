@@ -59,8 +59,8 @@ class TooManyRequests(AppError):
     status_code = 429
     code = "too_many_requests"
 
-    def __init__(self, message: str, *, retry_after: int) -> None:
-        super().__init__(message, retry_after=retry_after)
+    def __init__(self, message: str, *, retry_after: int, code: str | None = None) -> None:
+        super().__init__(message, code=code, retry_after=retry_after)
         self.retry_after = retry_after
 
 

@@ -20,8 +20,16 @@ async def test_message_is_saved_and_listed_for_the_admin(app, auth_client):
     assert page["total"] == 1
     item = page["items"][0]
     assert {k: item[k] for k in ("name", "contact", "message")} == VALID
+    assert item["source"] == "form"
     assert item["created_at"]
     assert "ip_hash" not in item
+
+
+async def test_a_conversation_sent_from_the_ai_assistant_is_marked(client, auth_client):
+    response = await client.post(CONTACT, json={**VALID, "source": "chat"})
+    assert response.status_code == 201, response.text
+    assert (await auth_client.get(MESSAGES)).json()["items"][0]["source"] == "chat"
+    assert (await client.post(CONTACT, json={**VALID, "source": "email"})).status_code == 422
 
 
 async def test_whatsapp_numbers_are_accepted(client):

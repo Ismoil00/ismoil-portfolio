@@ -3,6 +3,7 @@
 from app.models import links
 from app.models.analytics import VisitEvent
 from app.models.auth import AdminSession, AdminUser, LoginAttempt
+from app.models.chat import ChatQuestion, ChatUsage
 from app.models.content import Certificate, ContactMessage, Experience, Project, Testimonial
 from app.models.media import Media
 from app.models.sections import About, Contacts, Hero, OtherLink
@@ -23,6 +24,8 @@ __all__ = [
     "AdminSettings",
     "AdminUser",
     "Certificate",
+    "ChatQuestion",
+    "ChatUsage",
     "Company",
     "ContactMessage",
     "Contacts",

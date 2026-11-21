@@ -14,6 +14,7 @@ import { SocialRail } from "@/components/layout/SocialRail";
 import { BackgroundGlow } from "@/components/layout/BackgroundGlow";
 import { ConsentBanner } from "@/components/consent/ConsentBanner";
 import { VisitTracker } from "@/components/consent/VisitTracker";
+import { ChatWidget } from "@/components/chat/ChatWidget";
 import { siteUrl } from "@/lib/site";
 import { themeInitScript } from "@/lib/theme";
 import "../globals.css";
@@ -127,6 +128,8 @@ export default async function LocaleLayout({ children, params }: Props) {
           <Footer profile={profile} />
           <ConsentBanner />
           <VisitTracker />
+          {/* The AI assistant, while it's switched on in the admin panel (and the backend has its key). */}
+          {profile.chat && <ChatWidget name={profile.firstName} />}
         </NextIntlClientProvider>
       </body>
     </html>

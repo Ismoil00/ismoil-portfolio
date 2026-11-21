@@ -219,6 +219,8 @@ class ContactMessageIn(InputModel):
     message: Annotated[str, Field(max_length=10_000), AfterValidator(_message)]
     # Hidden form field: people leave it empty, form-filling bots don't.
     website: str | None = Field(default=None, max_length=500)
+    # "chat": the form was filled from a conversation with the AI assistant ("Send this chat to …").
+    source: Literal["form", "chat"] = "form"
 
 
 class ContactMessageOut(OutputModel):
@@ -226,6 +228,7 @@ class ContactMessageOut(OutputModel):
     name: str
     contact: str
     message: str
+    source: str
     created_at: datetime
 
 

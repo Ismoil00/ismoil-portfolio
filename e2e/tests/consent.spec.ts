@@ -35,6 +35,23 @@ test("rejecting cookies stores nothing optional, and the choice is remembered", 
   await context.close();
 });
 
+test("the banner stays put while another panel locks the page's scrolling", async ({ browser }) => {
+  const context = await newVisitor(browser);
+  const page = await context.newPage();
+  await page.goto(site("/en"));
+  const banner = page.getByRole("region", { name: "Cookies on this site" });
+  await expect(banner).toBeVisible();
+  const before = await banner.boundingBox();
+
+  // "Other links" (left side rail) hides the page's scrollbar while it's open, so the window gets wider.
+  await page.getByRole("button", { name: /^Other links — / }).click(); // the side rail one
+  await expect(page.locator("html")).toHaveCSS("overflow", "hidden");
+  const after = await banner.boundingBox();
+  expect(Math.abs((after?.x ?? 0) - (before?.x ?? 0))).toBeLessThan(0.5);
+  expect(Math.abs((after?.width ?? 0) - (before?.width ?? 0))).toBeLessThan(0.5);
+  await context.close();
+});
+
 test("the settings panel saves a partial choice and reopens from the footer", async ({ browser }) => {
   const context = await newVisitor(browser);
   const page = await context.newPage();

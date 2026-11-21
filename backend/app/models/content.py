@@ -125,10 +125,15 @@ class ContactMessage(UUIDPk, Base):
     """A message sent through the public site's contact form."""
 
     __tablename__ = "contact_messages"
-    __table_args__ = (Index("ix_contact_messages_ip_time", "ip_hash", "created_at"),)
+    __table_args__ = (
+        Index("ix_contact_messages_ip_time", "ip_hash", "created_at"),
+        CheckConstraint("source IN ('form', 'chat')", name="source"),
+    )
 
     name: Mapped[str] = mapped_column(String(100))
     contact: Mapped[str] = mapped_column(String(200))
     message: Mapped[str] = mapped_column(Text)
+    # "chat": the visitor sent their conversation with the AI assistant ("Send this chat to …").
+    source: Mapped[str] = mapped_column(String(8), default="form", server_default="form")
     ip_hash: Mapped[str] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)

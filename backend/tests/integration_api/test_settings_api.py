@@ -1,11 +1,12 @@
-"""Admin panel settings: which translator helps with Russian and Tajik, and changing the username
-and the password."""
+"""Admin panel settings: which translator helps with Russian and Tajik, the public site's AI assistant
+switch, and changing the username and the password."""
 
 import pytest
 
 from app.repositories.auth import AuthRepository
 from app.services.auth import AuthService
 from tests.integration_api.conftest import ADMIN_PASSWORD, ADMIN_USERNAME, make_client
+from tests.unit.fakes import FakeChatModel
 
 SETTINGS = "/api/v1/admin/settings"
 PASSWORD = "/api/v1/admin/settings/password"
@@ -37,7 +38,12 @@ async def test_settings_need_a_signed_in_admin(client):
 async def test_manual_is_the_default_and_claude_is_off_without_a_key(auth_client):
     response = await auth_client.get(SETTINGS)
     assert response.status_code == 200
-    assert response.json() == {"translator": "manual", "claude_ready": False}
+    assert response.json() == {
+        "translator": "manual",
+        "claude_ready": False,
+        "assistant_enabled": False,
+        "assistant_ready": False,
+    }
 
 
 @pytest.mark.parametrize("translator", ["google_web", "manual"])
@@ -60,11 +66,44 @@ async def test_claude_can_be_chosen_once_a_key_is_set(app, auth_client):
     assert (await auth_client.get(SETTINGS)).json()["claude_ready"] is True
     saved = await auth_client.put(SETTINGS, json={"translator": "claude"})
     assert saved.status_code == 200
-    assert saved.json() == {"translator": "claude", "claude_ready": True}
+    assert saved.json()["translator"] == "claude" and saved.json()["claude_ready"] is True
 
 
 async def test_an_unknown_translator_is_refused(auth_client):
     assert (await auth_client.put(SETTINGS, json={"translator": "deepl"})).status_code == 422
+
+
+async def test_nothing_to_change_is_refused(auth_client):
+    assert (await auth_client.put(SETTINGS, json={})).status_code == 422
+
+
+# --- AI assistant -----------------------------------------------------------------------------------
+
+
+async def test_the_assistant_needs_a_groq_key_first(auth_client):
+    response = await auth_client.put(SETTINGS, json={"assistant_enabled": True})
+    assert response.status_code == 422
+    assert "GROQ_API_KEY" in _locs(response)[("body", "assistant_enabled")]
+    assert (await auth_client.get(SETTINGS)).json()["assistant_enabled"] is False
+
+
+async def test_the_assistant_switches_on_and_off_without_touching_the_translator(app, auth_client):
+    app.state.chat_model = FakeChatModel()
+    await auth_client.put(SETTINGS, json={"translator": "google_web"})
+    on = await auth_client.put(SETTINGS, json={"assistant_enabled": True})
+    assert on.status_code == 200
+    assert on.json() == {
+        "translator": "google_web",
+        "claude_ready": False,
+        "assistant_enabled": True,
+        "assistant_ready": True,
+    }
+    off = await auth_client.put(SETTINGS, json={"assistant_enabled": False})
+    assert off.json()["assistant_enabled"] is False and off.json()["translator"] == "google_web"
+
+
+async def test_switching_the_assistant_off_works_even_without_a_key(auth_client):
+    assert (await auth_client.put(SETTINGS, json={"assistant_enabled": False})).status_code == 200
 
 
 async def test_changing_settings_needs_the_csrf_token(auth_client):

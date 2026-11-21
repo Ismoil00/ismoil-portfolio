@@ -19,6 +19,7 @@ dependencies = [
     "python-multipart==0.0.33",
     "aioboto3==15.5.0",
     "anthropic==2.8.0",
+    "groq==1.7.0",
     "tzdata==2026.6",
     "defusedxml==0.7.1",
     "certifi==2026.10.23",

@@ -40,6 +40,16 @@ os.environ.update(
         "LOCAL_STORAGE_DIR": str(BACKEND / ".tmp" / "e2e-storage"),
         "MEDIA_BASE_URL": f"http://localhost:{PORT}/media",
         "ANTHROPIC_API_KEY": "",  # never call the paid translation API from tests
+        # The AI assistant answers with a stand-in (scripts/fake_chat_model.py), never Groq. Every test runs
+        # from one address and asks far faster than people do, so the per-visitor limits and the free-quota
+        # shares are lifted here (both are tested in backend/tests).
+        "GROQ_API_KEY": "",
+        "CHAT_MAX_PER_10_MINUTES": "1000",
+        "CHAT_MAX_PER_DAY": "1000",
+        "CHAT_MAX_PER_NETWORK_PER_DAY": "1000",
+        "CHAT_MODEL_TOKENS_PER_MINUTE": "100000000",
+        "CHAT_MODEL_TOKENS_PER_DAY": "1000000000",
+        "CHAT_MODEL_REQUESTS_PER_DAY": "100000",
     }
 )
 sys.path.insert(0, str(BACKEND))
@@ -48,18 +58,22 @@ import asyncpg  # noqa: E402
 import uvicorn  # noqa: E402
 from alembic import command  # noqa: E402
 from alembic.config import Config  # noqa: E402
+from fake_chat_model import FakeChatModel  # noqa: E402  (next to this script)
 from sqlalchemy import text  # noqa: E402
 from sqlalchemy.ext.asyncio import create_async_engine  # noqa: E402
 from sqlalchemy.pool import NullPool  # noqa: E402
 
 from app.core.config import Settings, get_settings  # noqa: E402
 from app.db.session import Database  # noqa: E402
+from app.main import create_app  # noqa: E402
 from app.repositories.auth import AuthRepository  # noqa: E402
 from app.repositories.media import MediaRepository  # noqa: E402
+from app.repositories.settings import SettingsRepository  # noqa: E402
 from app.repositories.storage import create_storage  # noqa: E402
 from app.services.auth import AuthService  # noqa: E402
 from app.services.media import MediaService  # noqa: E402
 from app.services.seed import load_seed  # noqa: E402
+from app.services.settings import PanelSettingsService  # noqa: E402
 
 
 async def ensure_database(settings: Settings) -> None:
@@ -106,6 +120,9 @@ async def reset_and_seed(settings: Settings, password: str) -> None:
             data = json.loads((BACKEND / "seed" / "content.json").read_text(encoding="utf-8"))
             await load_seed(session, media, data, repo_root=REPO)
             await AuthService(AuthRepository(session), settings).create_admin(ADMIN_USERNAME, password)
+            # The AI assistant is on, as it would be after switching it on in Settings.
+            switch = PanelSettingsService(SettingsRepository(session), claude_ready=False, assistant_ready=True)
+            await switch.set_assistant(True)
     finally:
         await db.dispose()
 
@@ -124,7 +141,9 @@ def main() -> None:
     (STATE_DIR / "admin.json").write_text(json.dumps({"username": ADMIN_USERNAME, "password": password}), encoding="utf-8")
     print(f"E2E backend: fresh seeded database {DB_NAME!r}, serving on http://localhost:{PORT}", flush=True)
 
-    uvicorn.run("app.main:create_app", factory=True, host="127.0.0.1", port=PORT, log_level="warning")
+    app = create_app(settings)
+    app.state.chat_model = FakeChatModel()
+    uvicorn.run(app, host="127.0.0.1", port=PORT, log_level="warning")
 
 
 if __name__ == "__main__":

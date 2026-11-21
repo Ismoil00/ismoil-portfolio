@@ -9,20 +9,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Media
 from app.repositories.auth import AuthRepository
+from app.repositories.chat import ChatRepository
 from app.repositories.media import MediaRepository
 from app.repositories.storage import LocalStorage, Storage
 from app.services.analytics import AnalyticsService
+from app.services.chat import KEEP_QUESTIONS, KEEP_USAGE
 from app.services.media import MediaService, attachment_name
 
 AUTH_RECORDS_KEPT = timedelta(days=30)
 
 
 async def cleanup(session: AsyncSession, storage: Storage) -> int:
-    """Removes unlinked uploads older than a day, old login attempts and expired sessions.
-    Returns how many files were removed."""
+    """Removes unlinked uploads older than a day, old login attempts and expired sessions, old visit
+    statistics and the AI assistant's old counters and questions. Returns how many files were removed."""
     removed = await MediaService(MediaRepository(session), storage).cleanup()
     await AuthRepository(session).purge(datetime.now(UTC) - AUTH_RECORDS_KEPT)
     await AnalyticsService(session, max_per_hour=0).forget_old()
+    now = datetime.now(UTC)
+    await ChatRepository(session).forget(usage_before=now - KEEP_USAGE, questions_before=now - KEEP_QUESTIONS)
     await session.commit()
     return removed
 

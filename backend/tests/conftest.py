@@ -38,5 +38,6 @@ def settings() -> Settings:
             "local_storage_dir": BASE_DIR / ".tmp" / "test-storage",
             "media_base_url": "http://testserver/media",
             "anthropic_api_key": None,
+            "groq_api_key": None,  # tests plug in a fake model (tests/unit/fakes.py: FakeChatModel)
         }
     )

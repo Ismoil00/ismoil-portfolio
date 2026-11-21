@@ -129,3 +129,27 @@ async def test_the_daily_cleanup_forgets_events_older_than_about_a_year(client, 
     await maintenance.cleanup(db_session, app.state.storage)
     paths = (await db_session.execute(text("SELECT path FROM visit_events"))).scalars().all()
     assert paths == ["/en/new"]
+
+
+async def test_the_daily_cleanup_forgets_the_assistants_counters_after_2_days_and_questions_after_90(db_session, app):
+    from app.services import maintenance
+
+    for age in (timedelta(days=1), timedelta(days=3)):
+        await db_session.execute(
+            text(
+                "INSERT INTO chat_usage (id, ip_hash, net_hash, model, tokens, created_at) "
+                "VALUES (gen_random_uuid(), 'ip', 'net', 'm', 1, :at)"
+            ),
+            {"at": datetime.now(UTC) - age},
+        )
+    for age, words in ((timedelta(days=89), "recent"), (timedelta(days=91), "old")):
+        await db_session.execute(
+            text(
+                "INSERT INTO chat_questions (id, question, normalized, locale, created_at) "
+                "VALUES (gen_random_uuid(), :words, :words, 'en', :at)"
+            ),
+            {"at": datetime.now(UTC) - age, "words": words},
+        )
+    await maintenance.cleanup(db_session, app.state.storage)
+    assert (await db_session.execute(text("SELECT count(*) FROM chat_usage"))).scalar() == 1
+    assert (await db_session.execute(text("SELECT question FROM chat_questions"))).scalars().all() == ["recent"]

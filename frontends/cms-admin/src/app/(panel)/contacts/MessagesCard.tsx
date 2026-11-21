@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LuInbox, LuMail, LuPhone, LuTrash2 } from "react-icons/lu";
+import { LuBot, LuInbox, LuMail, LuPhone, LuTrash2 } from "react-icons/lu";
 import { api } from "@/api/client";
 import { errorMessage } from "@/api/errors";
 import { Button } from "@/components/ui/Button";
@@ -70,7 +70,16 @@ export function MessagesCard({ initial, pageSize }: { initial: Page<ContactMessa
             <tbody className="divide-y divide-line">
               {items.map((m) => (
                 <tr key={m.id} className="align-top transition-colors hover:bg-card-hover">
-                  <td className="px-4 py-3 font-medium">{m.name}</td>
+                  <td className="px-4 py-3 font-medium">
+                    {m.name}
+                    {m.source === "chat" && (
+                      // Sent from the public site's AI assistant ("Send this chat to …"): the message is the chat.
+                      <span className="ml-2 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-accent/15 px-2 py-0.5 text-xs font-medium text-accent">
+                        <LuBot className="size-3" aria-hidden />
+                        From chat
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <a href={replyLink(m.contact)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-accent hover:underline">
                       {m.contact.includes("@") ? <LuMail className="size-3.5" /> : <LuPhone className="size-3.5" />}

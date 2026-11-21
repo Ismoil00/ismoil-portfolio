@@ -125,7 +125,8 @@
     "directly": "Or reach me directly",
     "otherLinks": "Other links",
     "otherLinksCount": "{count, plural, one {# link} other {# links}}",
-    "rateLimited": "Too many messages right now. Please try again later or reach me directly."
+    "rateLimited": "Too many messages right now. Please try again later or reach me directly.",
+    "fromChat": "Your chat with the assistant is in the message. Add your name and contact, then send."
   },
   "footer": {
     "rights": "All rights reserved.",
@@ -331,10 +332,49 @@
   "cookiesPage": {
     "title": "Cookie policy",
     "intro": "This site stores only what it needs, and asks before storing anything else.",
-    "necessaryText": "consent — your cookie choice (6 months).",
-    "analyticsText": "vid — a random anonymous ID (1 year), only with your consent. Visit statistics (page, language, device type, country, the site you came from) are kept on this site's own server for about a year, without your IP address or name.",
+    "necessaryText": "consent — your cookie choice (6 months). chat — a random ID that limits how many questions the AI assistant answers (1 day). Your conversation with the AI assistant is kept in the open browser tab only, until you close it.",
+    "analyticsText": "vid — a random anonymous ID (1 year), only with your consent. Visit statistics (page, language, device type, country, the site you came from) are kept on this site's own server for about a year, without your IP address or name. Questions you ask the AI assistant are kept for 90 days, with emails, phone numbers and links hidden, to see what visitors ask most.",
     "preferencesText": "theme — your light or dark theme, kept in your browser, only with your consent.",
-    "thirdParty": "No advertising or third-party tracking cookies are used.",
+    "thirdParty": "No advertising or third-party tracking cookies are used. Questions to the AI assistant are sent to Groq to write the answer; Groq doesn't keep them.",
     "change": "You can change your choice at any time:"
+  },
+  "chat": {
+    "launcher": "Ask AI",
+    "open": "Open the AI assistant",
+    "close": "Close the assistant",
+    "title": "AI assistant",
+    "status": "Online",
+    "greeting": "Hi! I'm the AI assistant of this site. Ask me about {name}'s projects, skills or experience.",
+    "suggestions": [
+      "What has {name} built?",
+      "Which technologies does {name} use most?",
+      "Is {name} looking for work?"
+    ],
+    "placeholder": "Ask about projects, skills…",
+    "send": "Send",
+    "stop": "Stop",
+    "newChat": "New chat",
+    "retry": "Try again",
+    "thinking": "Writing…",
+    "you": "You",
+    "assistant": "Assistant",
+    "disclaimer": "AI answers can contain mistakes.",
+    "sendToOwner": "Send this chat to {name}",
+    "errors": {
+      "chat_off": "The assistant is off right now. Use the contact form instead.",
+      "chat_limit": "You've asked a lot in a short time. Try again in {minutes} min.",
+      "chat_busy": "The assistant is busy right now. Try again in {minutes} min.",
+      "chat_turns": "This chat is long enough. Start a new chat to continue.",
+      "chat_failed": "Something went wrong. Try again.",
+      "network": "No connection. Check your internet and try again.",
+      "chat_bot": "Your browser didn't pass the security check. Reload the page and try again.",
+      "invalid": "This message can't be sent. Shorten it and try again."
+    },
+    "transcript": {
+      "heading": "Conversation with the site's AI assistant:",
+      "question": "Question",
+      "answer": "Answer",
+      "omitted": "(earlier messages left out)"
+    }
   }
 }

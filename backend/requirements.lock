@@ -27,6 +27,7 @@ click==8.5.1
 colorama==0.4.6
 cryptography==50.0.2
 defusedxml==0.7.1
+distro==1.9.0
 dnspython==2.9.2
 docker==7.2.0
 docstring_parser==0.18.0
@@ -37,6 +38,7 @@ flask-cors==6.0.5
 frozenlist==1.8.0
 graphql-core==3.3.2
 greenlet==3.5.6
+groq==1.7.0
 h11==0.16.0
 httpcore==1.0.9
 httpcore2==2.16.0

@@ -62,6 +62,8 @@ export interface Profile {
   contacts: ContactChannel[];
   otherLinks: OtherLink[];
   stats: ProfileStats;
+  /** The AI assistant is on (switched on in the admin panel, and the backend has its Groq key). */
+  chat: boolean;
 }
 
 /** A labelled reference (filters, cross-links). */
@@ -315,4 +317,6 @@ export interface ContactPayload {
   message: string;
   /** Hidden field: people leave it empty, form-filling bots don't. */
   website?: string;
+  /** "chat": filled from a conversation with the AI assistant. */
+  source?: "form" | "chat";
 }

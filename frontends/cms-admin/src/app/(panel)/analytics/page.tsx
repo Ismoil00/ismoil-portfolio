@@ -4,6 +4,7 @@ import { serverGet } from "@/api/server";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import type { Analytics, Count } from "@/types/api";
+import { AssistantQuota } from "./AssistantQuota";
 
 export const metadata: Metadata = { title: "Analytics" };
 
@@ -56,6 +57,14 @@ export default async function AnalyticsPage({ searchParams }: Props) {
           <TopList title="Countries" items={data.countries} />
           <TopList title="Languages" items={data.locales} />
           <TopList title="Devices" items={data.devices} />
+          <TopList
+            title="Top questions"
+            description="Asked to the AI assistant, only by visitors who allowed analytics. Kept 90 days; emails, phone numbers and links are hidden."
+            items={data.questions}
+            wrap
+            className="lg:col-span-2"
+          />
+          {data.assistant && <AssistantQuota usage={data.assistant} />}
         </div>
       </div>
     </>
@@ -96,10 +105,23 @@ function DailyChart({ daily }: { daily: Analytics["daily"] }) {
   );
 }
 
-function TopList({ title, items }: { title: string; items: Count[] }) {
+function TopList({
+  title,
+  items,
+  description,
+  wrap = false,
+  className,
+}: {
+  title: string;
+  items: Count[];
+  description?: string;
+  /** Long names (questions) wrap instead of being cut. */
+  wrap?: boolean;
+  className?: string;
+}) {
   const max = Math.max(1, ...items.map((i) => i.count));
   return (
-    <Card title={title}>
+    <Card title={title} description={description} className={className}>
       {items.length === 0 ? (
         <p className="text-sm text-subtle">Nothing yet.</p>
       ) : (
@@ -108,7 +130,7 @@ function TopList({ title, items }: { title: string; items: Count[] }) {
             <li key={item.name} className="relative overflow-hidden rounded-lg px-3 py-2 text-sm">
               <span className="absolute inset-y-0 left-0 bg-accent/15" style={{ width: `${(item.count / max) * 100}%` }} />
               <span className="relative flex justify-between gap-3">
-                <span className="truncate">{item.name}</span>
+                <span className={wrap ? "break-words" : "truncate"}>{item.name}</span>
                 <span className="font-medium tabular-nums">{item.count}</span>
               </span>
             </li>

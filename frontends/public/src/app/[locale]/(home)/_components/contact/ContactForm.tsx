@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { LuSend } from "react-icons/lu";
 import { sendContactMessage } from "@/api/contact.actions";
+import { CONTACT_DRAFT, takeContactDraft } from "@/lib/chat";
 
 type Status = "idle" | "sending" | "sent" | "error" | "invalid" | "rate-limited";
 
@@ -17,6 +18,29 @@ const isPhone = (v: string) => /^\+[\d\s\-().]+$/.test(v) && /^\d{7,15}$/.test(v
 export function ContactForm() {
   const t = useTranslations("contact");
   const [status, setStatus] = useState<Status>("idle");
+  // "chat": the message was filled from a conversation with the AI assistant ("Send this chat to …").
+  const [source, setSource] = useState<"form" | "chat">("form");
+  const nameRef = useRef<HTMLInputElement>(null);
+  const messageRef = useRef<HTMLTextAreaElement>(null);
+
+  // A conversation handed over by the assistant: waiting from another page, or sent while this one is open.
+  useEffect(() => {
+    const fill = () => {
+      const draft = takeContactDraft();
+      if (!draft || !messageRef.current) return;
+      messageRef.current.value = draft;
+      setSource("chat");
+      setStatus("idle");
+      nameRef.current?.focus({ preventScroll: true });
+      // Brought here from another page: scroll once the page is laid out.
+      requestAnimationFrame(() =>
+        document.getElementById("contact")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      );
+    };
+    fill();
+    window.addEventListener(CONTACT_DRAFT, fill);
+    return () => window.removeEventListener(CONTACT_DRAFT, fill);
+  }, []);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -27,6 +51,7 @@ export function ContactForm() {
       contact: data.contact?.trim(),
       message: data.message?.trim(),
       website: data.website ?? "",
+      source,
     };
 
     if (!payload.name || !payload.message || !payload.contact || !(isEmail(payload.contact) || isPhone(payload.contact))) {
@@ -38,7 +63,10 @@ export function ContactForm() {
     try {
       const result = await sendContactMessage(payload as Required<typeof payload>);
       setStatus(result);
-      if (result === "sent") form.reset();
+      if (result === "sent") {
+        form.reset();
+        setSource("form");
+      }
     } catch {
       setStatus("error");
     }
@@ -57,16 +85,24 @@ export function ContactForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
           <span className="mb-2 block text-sm text-muted">{t("name")}</span>
-          <input name="name" autoComplete="name" maxLength={100} placeholder={t("namePlaceholder")} className={inputClass} onInput={clearInvalid} />
+          <input ref={nameRef} name="name" autoComplete="name" maxLength={100} placeholder={t("namePlaceholder")} className={inputClass} onInput={clearInvalid} />
         </label>
         <label className="block">
           <span className="mb-2 block text-sm text-muted">{t("contactField")}</span>
           <input name="contact" autoComplete="email" maxLength={200} placeholder={t("contactPlaceholder")} className={inputClass} onInput={clearInvalid} />
         </label>
       </div>
+      {source === "chat" && (
+        <p id="contact-from-chat" className="text-sm text-accent">
+          {t("fromChat")}
+        </p>
+      )}
       <label className="block">
         <span className="mb-2 block text-sm text-muted">{t("message")}</span>
-        <textarea name="message" rows={6} maxLength={2000} placeholder={t("messagePlaceholder")} className={`${inputClass} resize-y`} onInput={clearInvalid} />
+        <textarea
+          ref={messageRef}
+          aria-describedby={source === "chat" ? "contact-from-chat" : undefined}
+          name="message" rows={6} maxLength={2000} placeholder={t("messagePlaceholder")} className={`${inputClass} resize-y`} onInput={clearInvalid} />
       </label>
 
       <div aria-live="polite" className="min-h-5 text-sm">

@@ -14,6 +14,8 @@ export type Consent = { analytics: boolean; preferences: boolean };
 
 export const CONSENT_COOKIE = "consent";
 export const VISITOR_COOKIE = "vid";
+/** A random id the AI assistant's limits are counted by ("necessary": set only when a question is asked). */
+export const CHAT_COOKIE = "chat";
 /** Fired on `window` when the choice changes, and to open the settings panel. */
 export const CONSENT_CHANGED = "consent-changed";
 export const OPEN_CONSENT_SETTINGS = "open-consent-settings";
@@ -32,12 +34,17 @@ function writeCookie(name: string, value: string, maxAge: number) {
   document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAge}; SameSite=Lax${secure}`;
 }
 
-/** The saved choice, or null when the visitor hasn't chosen yet (or chose under an older policy). */
-export function readConsent(): Consent | null {
-  const value = readCookie(CONSENT_COOKIE);
+/** The choice a `consent` cookie value holds (already decoded), or null for none or an older policy.
+ * Also used on the server (the AI assistant's route keeps questions only with analytics consent). */
+export function parseConsent(value: string | null | undefined): Consent | null {
   const match = value?.match(/^v(\d+):a([01])p([01])$/);
   if (!match || match[1] !== VERSION) return null;
   return { analytics: match[2] === "1", preferences: match[3] === "1" };
+}
+
+/** The saved choice, or null when the visitor hasn't chosen yet (or chose under an older policy). */
+export function readConsent(): Consent | null {
+  return parseConsent(readCookie(CONSENT_COOKIE));
 }
 
 export function saveConsent(consent: Consent) {

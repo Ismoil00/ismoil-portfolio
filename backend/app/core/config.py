@@ -109,6 +109,24 @@ class Settings(BaseSettings):
     anthropic_api_key: SecretStr | None = None
     translation_model: str = "claude-opus-5-5"
 
+    # The public site's AI assistant (Groq's free tier: at its limits it refuses, it never bills).
+    # Without GROQ_API_KEY the assistant is off; the admin's Settings page switches it on and off.
+    groq_api_key: SecretStr | None = None
+    chat_models: list[str] = ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "openai/gpt-oss-20b"]  # tried in order
+    # Our share of each model's free quota (Groq's own: 200k tokens and 1,000 requests a day, 8k tokens a
+    # minute), kept a little below so its limit is never hit mid-answer. Cached prompt tokens don't count.
+    chat_model_tokens_per_day: int = 180_000
+    chat_model_requests_per_day: int = 900
+    chat_model_tokens_per_minute: int = 7_000
+    chat_hour_share: int = 6  # one hour may use at most 1/6 of a day's tokens, so a burst can't empty the day
+    # Per visitor: counted per chat cookie and per IP (a question is refused when either is over), and per
+    # network (IPv4 /24, IPv6 /64) so hopping between addresses of one network doesn't help.
+    chat_max_per_10_minutes: int = 6
+    chat_max_per_day: int = 20
+    chat_max_per_network_per_day: int = 40
+    chat_max_turns: int = 12  # questions in one conversation, then "New chat"
+    chat_answer_max_tokens: int = 400
+
     # Requests
     max_body_bytes: int = 110 * 1024 * 1024
     temp_dir: Path = Field(default_factory=_default_temp_dir)
@@ -120,7 +138,7 @@ class Settings(BaseSettings):
             raise ValueError("DB_SCHEMA must be a plain name (letters, digits, underscores)")
         return value.lower()
 
-    @field_validator("internal_api_token", "cron_secret", "blob_read_write_token")
+    @field_validator("internal_api_token", "cron_secret", "blob_read_write_token", "groq_api_key")
     @classmethod
     def _empty_is_unset(cls, value: SecretStr | None) -> SecretStr | None:
         """`CRON_SECRET=` (an empty line in .env) means "not set", never "the secret is empty"."""

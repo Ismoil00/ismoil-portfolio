@@ -22,4 +22,24 @@ test.describe("On a phone", () => {
     await expect(page).toHaveURL(/#projects$/);
     await expect(page.locator("#projects")).toBeInViewport();
   });
+
+  test("the AI assistant fills the screen and closes again", async ({ page }) => {
+    await page.goto(site("/en"));
+    await page.getByRole("button", { name: "Open the AI assistant" }).click();
+    const panel = page.getByRole("dialog", { name: "AI assistant" });
+    await expect(panel).toBeVisible();
+    // It covers the whole window (measured against what the page can show, without a scrollbar), once
+    // its short opening animation is over.
+    await panel.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
+    const box = await panel.boundingBox();
+    const view = await page.evaluate(() => [document.documentElement.clientWidth, window.innerHeight]);
+    expect([Math.round(box?.x ?? -1), Math.round(box?.y ?? -1)]).toEqual([0, 0]);
+    expect([Math.round(box?.width ?? 0), Math.round(box?.height ?? 0)]).toEqual(view);
+
+    await panel.getByRole("button", { name: "What has Ismoil built?" }).click();
+    await expect(panel.getByRole("link", { name: "Banking and public-sector backend" })).toBeVisible();
+    await panel.getByRole("button", { name: "Close the assistant" }).click();
+    await expect(panel).toBeHidden();
+    await expect(page.getByRole("button", { name: "Open the AI assistant" })).toBeVisible();
+  });
 });

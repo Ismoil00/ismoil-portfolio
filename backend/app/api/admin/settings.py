@@ -1,5 +1,5 @@
-"""Admin: the Settings page — which translator helps with Russian and Tajik, and changing the username
-and the password."""
+"""Admin: the Settings page — which translator helps with Russian and Tajik, the public site's AI
+assistant switch, and changing the username and the password."""
 
 from typing import Annotated
 
@@ -15,22 +15,37 @@ router = APIRouter(prefix="/settings", tags=["admin: settings"])
 
 
 def get_settings_service(session: SessionDep, request: Request) -> PanelSettingsService:
-    claude_ready = getattr(request.app.state, "translator", None) is not None
-    return PanelSettingsService(SettingsRepository(session), claude_ready=claude_ready)
+    return PanelSettingsService(
+        SettingsRepository(session),
+        claude_ready=getattr(request.app.state, "translator", None) is not None,
+        assistant_ready=getattr(request.app.state, "chat_model", None) is not None,
+    )
 
 
 Service = Annotated[PanelSettingsService, Depends(get_settings_service)]
 
 
+async def _out(service: PanelSettingsService) -> PanelSettingsOut:
+    return PanelSettingsOut(
+        translator=await service.translator(),
+        claude_ready=service.claude_ready,
+        assistant_enabled=await service.assistant_enabled(),
+        assistant_ready=service.assistant_ready,
+    )
+
+
 @router.get("", response_model=PanelSettingsOut)
 async def read_settings(service: Service) -> PanelSettingsOut:
-    return PanelSettingsOut(translator=await service.translator(), claude_ready=service.claude_ready)
+    return await _out(service)
 
 
 @router.put("", response_model=PanelSettingsOut)
 async def update_settings(data: PanelSettingsIn, service: Service) -> PanelSettingsOut:
-    translator = await service.set_translator(data.translator)
-    return PanelSettingsOut(translator=translator, claude_ready=service.claude_ready)
+    if data.translator is not None:
+        await service.set_translator(data.translator)
+    if data.assistant_enabled is not None:
+        await service.set_assistant(data.assistant_enabled)
+    return await _out(service)
 
 
 @router.put("/password", status_code=status.HTTP_204_NO_CONTENT)

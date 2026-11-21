@@ -3,9 +3,10 @@
 import uuid
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.deps import SessionDep, StorageDep
+from app.api.public_api.chat import assistant_on
 from app.core.text import month_to_date
 from app.repositories.public import ListQuery, PublicRepository
 from app.schemas import public as s
@@ -52,8 +53,10 @@ Paging = Annotated[ListQuery, Depends(list_query)]
 
 
 @router.get("/profile", response_model=s.Profile)
-async def profile(service: Service, lang: Lang = "en") -> s.Profile:
-    return await service.profile(lang)
+async def profile(service: Service, request: Request, session: SessionDep, lang: Lang = "en") -> s.Profile:
+    result = await service.profile(lang)
+    result.chat = await assistant_on(request, session)  # the site's layout loads the profile on every page
+    return result
 
 
 @router.get("/skills", response_model=s.Skills)

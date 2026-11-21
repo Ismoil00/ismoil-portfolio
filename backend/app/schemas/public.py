@@ -92,6 +92,7 @@ class Profile(PublicModel):
     contacts: list[ContactChannel]
     other_links: list[OtherLink]
     stats: Stats
+    chat: bool = False  # the AI assistant is on (switched on in the admin panel, and GROQ_API_KEY is set)
 
 
 class TechItem(PublicModel):

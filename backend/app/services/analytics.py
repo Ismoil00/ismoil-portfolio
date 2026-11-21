@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ContactMessage
 from app.models.analytics import VisitEvent
+from app.repositories.chat import ChatRepository
 from app.schemas.analytics import AnalyticsOut, CountOut, DayOut, TotalsOut, VisitEventIn
 
 # Crawlers, link previews, monitoring and scripts: their visits aren't people's.
@@ -121,6 +122,10 @@ class AnalyticsService:
             countries=await self._counts(VisitEvent.country, since, empty="unknown"),
             locales=await self._counts(VisitEvent.locale, since, empty="?"),
             devices=await self._counts(VisitEvent.device, since, empty="?"),
+            questions=[
+                CountOut(name=question, count=count)
+                for question, count in await ChatRepository(self.session).top_questions(since, TOP)
+            ],
         )
 
     async def forget_old(self) -> None:

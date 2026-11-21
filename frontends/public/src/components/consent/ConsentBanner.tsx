@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { LuCookie, LuSettings2, LuX } from "react-icons/lu";
 import { Link } from "@/i18n/navigation";
+import { CHAT_PANEL } from "@/lib/chat";
 import { OPEN_CONSENT_SETTINGS, readConsent, saveConsent, type Consent } from "@/lib/consent";
 
 const ALL: Consent = { analytics: true, preferences: true };
@@ -19,7 +20,11 @@ export function ConsentBanner() {
   const [panel, setPanel] = useState(false);
   const [draft, setDraft] = useState<Consent>(NONE);
   const dialog = useRef<HTMLDialogElement>(null);
+  const region = useRef<HTMLElement>(null);
   const pressedOutside = useRef(false);
+  // The AI assistant's panel is open: the banner steps aside until it closes (no choice is made for it).
+  const [chatOpen, setChatOpen] = useState(false);
+  const shown = banner && !panel && !chatOpen;
 
   // The cookie is only readable in the browser: decide after the page has loaded.
   useEffect(() => {
@@ -29,9 +34,30 @@ export function ConsentBanner() {
       setDraft(readConsent() ?? NONE);
       setPanel(true);
     };
+    const onChat = (e: Event) => setChatOpen((e as CustomEvent<boolean>).detail === true);
     window.addEventListener(OPEN_CONSENT_SETTINGS, open);
-    return () => window.removeEventListener(OPEN_CONSENT_SETTINGS, open);
+    window.addEventListener(CHAT_PANEL, onChat);
+    return () => {
+      window.removeEventListener(OPEN_CONSENT_SETTINGS, open);
+      window.removeEventListener(CHAT_PANEL, onChat);
+    };
   }, []);
+
+  // While shown, the banner tells the AI assistant's button how much room it takes at the bottom (its
+  // height, the gap below it and a little air), so the button can sit above it instead of under it.
+  useEffect(() => {
+    const el = region.current;
+    if (!shown || !el) return;
+    const root = document.documentElement;
+    const update = () => root.style.setProperty("--consent-banner-space", `${el.offsetHeight + 24}px`);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--consent-banner-space");
+    };
+  }, [shown]);
 
   useEffect(() => {
     const el = dialog.current;
@@ -52,11 +78,14 @@ export function ConsentBanner() {
 
   return (
     <>
-      {banner && !panel && (
+      {shown && (
+        // While a panel locks the page (lib/scroll-lock.ts) the scrollbar is gone and the window is wider by
+        // its width: the right edge moves in by that much, so the centered banner stays where it was.
         <section
+          ref={region}
           role="region"
           aria-label={t("title")}
-          className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-3xl rounded-2xl motion-safe:animate-consent-float border border-line bg-card/95 p-4 shadow-2xl backdrop-blur sm:p-5"
+          className="fixed bottom-3 left-3 right-[calc(0.75rem+var(--scrollbar-lock,0px))] z-50 mx-auto max-w-3xl rounded-2xl motion-safe:animate-consent-float border border-line bg-card/95 p-4 shadow-2xl backdrop-blur sm:p-5"
         >
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
             <div className="flex gap-3">

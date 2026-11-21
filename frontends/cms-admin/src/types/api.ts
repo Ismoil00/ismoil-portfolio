@@ -127,6 +127,8 @@ export interface ContactMessage {
   name: string;
   contact: string;
   message: string;
+  /** "chat": sent from a conversation with the public site's AI assistant ("Send this chat to …"). */
+  source: "form" | "chat";
   created_at: string;
 }
 
@@ -219,6 +221,10 @@ export interface PanelSettings {
   translator: Translator;
   /** ANTHROPIC_API_KEY is set on the backend, so Claude can be chosen. */
   claude_ready: boolean;
+  /** The public site shows the AI assistant (when it's also ready). */
+  assistant_enabled: boolean;
+  /** GROQ_API_KEY is set on the backend, so the assistant can be switched on. */
+  assistant_ready: boolean;
 }
 
 /** The signed-in admin (GET /auth/me). */
@@ -235,4 +241,22 @@ export type Analytics = {
   countries: Count[];
   locales: Count[];
   devices: Count[];
+  /** The AI assistant's most asked questions (only from visitors who accepted analytics cookies). */
+  questions: Count[];
+  /** The AI assistant's use of Groq's free quota right now, per model (rolling windows). */
+  assistant: {
+    ready: boolean;
+    enabled: boolean;
+    models: {
+      model: string;
+      requests_day: number;
+      requests_day_limit: number;
+      tokens_day: number;
+      tokens_day_limit: number;
+      tokens_hour: number;
+      tokens_hour_limit: number;
+      tokens_minute: number;
+      tokens_minute_limit: number;
+    }[];
+  } | null;
 };

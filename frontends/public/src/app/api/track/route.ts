@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { apiClient } from "@/api/client";
 import { endpoints } from "@/api/endpoints";
+import { visitorHeaders } from "@/api/visitor-headers";
 
 /**
  * Visit statistics: the browser reports a page view or résumé download here (its own site), and this
@@ -18,9 +19,6 @@ export async function POST(request: Request): Promise<Response> {
   if (!process.env.API_URL || typeof body !== "object" || body === null) return new Response(null, { status: 204 });
 
   const incoming = await headers();
-  const forwarded = incoming.get("x-forwarded-for");
-  const visitor = forwarded?.split(",")[0].trim();
-  const token = process.env.INTERNAL_API_TOKEN;
   const event = {
     kind: body.kind,
     path: body.path,
@@ -32,12 +30,7 @@ export async function POST(request: Request): Promise<Response> {
     user_agent: (incoming.get("user-agent") ?? "").slice(0, 1000),
   };
   try {
-    await apiClient.post(endpoints.events, event, {
-      headers: {
-        ...(forwarded ? { "X-Forwarded-For": forwarded } : {}),
-        ...(token && visitor ? { "X-Internal-Token": token, "X-Visitor-IP": visitor } : {}),
-      },
-    });
+    await apiClient.post(endpoints.events, event, { headers: visitorHeaders(incoming) });
   } catch {
     // Statistics must never break the site: a failed report is simply lost.
   }

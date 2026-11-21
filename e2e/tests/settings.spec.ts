@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "../support/fixtures";
-import { ADMIN_STATE, admin } from "../support/env";
+import { ADMIN_STATE, admin, site } from "../support/env";
 
 // The Settings page decides what helps fill Russian and Tajik next to every EN / RU / TG field.
 test.use({ storageState: ADMIN_STATE });
@@ -59,5 +59,30 @@ test.describe("Settings: translator", () => {
     } finally {
       await chooseTranslator(page, "Manual");
     }
+  });
+});
+
+test.describe("Settings: AI assistant", () => {
+  const toggle = (page: Page) => page.getByRole("checkbox", { name: "Show the AI assistant on the public site" });
+
+  test("switched off, the chat leaves the public site; switched on, it's back", async ({ page }) => {
+    await page.goto(admin("/settings"));
+    await expect(page.getByText("Ready: the Groq key is set.")).toBeVisible();
+    await expect(toggle(page)).toBeChecked();
+    try {
+      await toggle(page).uncheck();
+      await expect(page.getByText("AI assistant switched off.")).toBeVisible();
+      await page.goto(site("/en"));
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Open the AI assistant" })).toHaveCount(0);
+    } finally {
+      await page.goto(admin("/settings"));
+      if (!(await toggle(page).isChecked())) {
+        await toggle(page).check();
+        await expect(page.getByText("AI assistant switched on.")).toBeVisible();
+      }
+    }
+    await page.goto(site("/en"));
+    await expect(page.getByRole("button", { name: "Open the AI assistant" })).toBeVisible();
   });
 });
